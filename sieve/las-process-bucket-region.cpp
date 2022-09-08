@@ -60,6 +60,9 @@
 #include "threadpool.hpp"                 // for worker_thread, thread_pool
 #include "verbose.h"
 
+#include <cstdio>
+#include <iostream>
+
 MAYBE_UNUSED static inline void subusb(unsigned char *S1, unsigned char *S2, ssize_t offset)
 {
     int ex = (unsigned int) S1[offset] - (unsigned int) S2[offset];
@@ -516,6 +519,9 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
     cofac_standalone cur;
 
+    siever_config cf = ws.conf; //- obsolete?
+    
+    std::vector<cofac_standalone> surv_pre_batch; //-
 
     for (size_t i_surv = 0 ; i_surv < survivors.size(); i_surv++) {
         if (dlp_descent && ws.las.tree.must_take_decision())
@@ -575,11 +581,57 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
         NxToIJ (i, j, N, x, ws.conf.logI);
         adjustIJsublat(i, j, ws.Q.sublat);
 
+        //- ws.conf.sides[side].fbK.k_fb_product vs ws.sides[side].fbK.k_fb_product;
+        
+        cxx_mpz fbp0; //- = ws.sides[0].fbK.k_fb_product;
+        cxx_mpz fbp1; //- = ws.sides[1].fbK.k_fb_product;
+
+        
+        fbp0 = ws.sides[0].fbs->slicing_fb_product;
+        fbp1 = ws.sides[1].fbs->slicing_fb_product;
+
+        const cxx_mpz fbp0sd = ws.las.get_fb_product_shared_data(0);
+        const cxx_mpz fbp1sd = ws.las.get_fb_product_shared_data(1);
+
+        // if (fbp0 > (cxx_mpz)0) 
+        // {
+        //     std::cout << "fb_prod a : " << fbp0 << "::" << fbp1 << "\n";
+        //     std::cout << "fb_prod b : " << fbp0sd << "::" << fbp1sd << "\n";
+            
+        // }   
+            
+
+        //- ws.conf.sides[side].fbK.k_small_batch_max_prime
+
+        /*
+        //- auto truc = ws.sides[0].fbK.no_trial_div;
+        
+        unsigned int sbmp0, sbmp1;
+        */
+
         if (do_resieve) {
 
             for(int pside = 0 ; pass && pside < 2 ; pside++) {
                 int side = trialdiv_first_side ^ pside;
                 nfs_work::side_data & wss(ws.sides[side]);
+
+
+
+
+
+
+                //- auto truc = ws.sides[0].fbK.no_trial_div;
+                unsigned int no_trial_div = wss.fbK.no_trial_div;
+                
+                /* 
+                sbmp0 = ws.sides[0].fbK.k_small_batch_max_prime;
+                sbmp1 = ws.sides[1].fbK.k_small_batch_max_prime;
+
+                std::cout << "SBMP : " << sbmp0 << "::" << sbmp1 << "\n";
+                std::cout << "FBPR : " << fbp0 << "::" << fbp1 << "\n";
+                */
+
+
 
                 CHILD_TIMER_PARAMETRIC(timer, "side ", side, " pre-cofactoring checks");
                 TIMER_CATEGORY(timer, cofactoring(side));
@@ -592,6 +644,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                    i,j-coordinates. The transformed polynomial on the 
                    special-q side is already divided by q */
                 wss.lognorms.norm(cur.norm[side], i, j);
+                //- gmp_printf("## (%li, %li)(%Zd)[%d] \n", cur.a, cur.b, cur.norm[side], side);
 
                 if (cur.trace_on_spot()) {
                     verbose_output_vfprint(TRACE_CHANNEL, 0,
@@ -621,7 +674,8 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                         &sides[side].purged,
                         *wss.td,
                         cur.a, cur.b,
-                        *wss.fbs);
+                        *wss.fbs,
+                        no_trial_div);
 
                 /* if q is composite, its prime factors have not been sieved.
                  * Check if they divide. They probably don't, since we
@@ -640,7 +694,20 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
                 SIBLING_TIMER(timer, "check_leftover_norm");
 
-                pass = check_leftover_norm (cur.norm[side], ws.conf.sides[side]);
+                siever_side_config & scs = ws.conf.sides[side]; //-
+                
+
+                pass = check_leftover_norm (cur.norm[side], scs); //-ws.conf.sides[side]);
+
+                /*
+
+                sbmp0 = ws.sides[0].fbK.k_small_batch_max_prime;
+                sbmp1 = ws.sides[1].fbK.k_small_batch_max_prime;
+
+                std::cout << "SBMPb : " << sbmp0 << "::" << sbmp1 << "\n";
+                std::cout << "FBPRb : " << fbp0 << "::" << fbp1 << "\n";
+                */
+
                 if (cur.trace_on_spot()) {
                     verbose_output_vfprint(TRACE_CHANNEL, 0, gmp_vfprintf,
                             "# checked leftover norm=%Zd", (mpz_srcptr) cur.norm[side]);
@@ -706,6 +773,23 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
         if (!pass) continue;
 
+        
+
+        if (do_resieve)
+            for (int side_i = 0; side_i < 2; side_i++)
+            {
+                siever_side_config sc = cf.sides[side_i];
+                unsigned long lim = sc.lim;
+                std::sort(cur.factors[side_i].begin(), cur.factors[side_i].end());
+                gmp_printf("(%li, %li)(%Zd)[%d]:", cur.a, cur.b, cur.norm[side_i], side_i);
+                for (auto const& z : cur.factors[side_i]) {
+                        assert(z < lim);
+                        printf("%lx,", z);
+                }
+                printf("\n");
+            }
+                
+
 #if 0
         if (ws.las.batch || ws.las.batch_print_survivors) {
             /* in these cases, we won't go through detached_cofac, hence
@@ -727,6 +811,13 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
         rep.survivors.enter_cofactoring++;
 
+
+        //- bypass
+        surv_pre_batch.push_back(cur);
+
+        continue;
+        assert(0);
+
         // we'll do the printing later.
         if (ws.las.batch || ws.las.batch_print_survivors.filename)
         {
@@ -736,6 +827,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
             /* make sure threads don't write the cofactor list at the
              * same time !!! */
             cur.transfer_to_cofac_list(ws.cofac_candidates, aux_p->doing);
+            std::cout << "transfer_to_cofac_list\n";
             continue; /* we deal with all cofactors at the end of subjob */
         }
 
@@ -759,6 +851,45 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 break;
         }
     }
+    //- end for !
+
+#if 1   
+    //-std::cout << "end for\n";
+    for (auto cur_last : surv_pre_batch) {
+        if (ws.las.batch || ws.las.batch_print_survivors.filename)
+        {
+            /* see above */
+            rep.reports++;
+            if (ws.conf.sublat_bound && !cur_last.ab_coprime()) continue;
+            /* make sure threads don't write the cofactor list at the
+             * same time !!! */
+            cur_last.transfer_to_cofac_list(ws.cofac_candidates, aux_p->doing);
+            std::cout << "transfer_to_cofac_list\n";
+            continue; /* we deal with all cofactors at the end of subjob */
+        }
+
+        auto D = new detached_cofac_parameters(wc_p, aux_p, std::move(cur_last));
+
+        if (!dlp_descent) {
+            /* We must make sure that we join the async threads at some
+             * point, otherwise we'll leak memory. It seems more appropriate
+             * to batch-join only, so this is done at the las_subjob level */
+            // worker->get_pool().get_result(1, false);
+            worker->get_pool().add_task(detached_cofac, D, N, 1); /* id N, queue 1 */
+        } else {
+            /* We must proceed synchronously for the descent */
+            auto res = dynamic_cast<detached_cofac_result*>(detached_cofac(worker, D, N));
+            bool cc = false;
+            if (res->rel_p) {
+                cc = register_contending_relation(ws.las, ws.Q.doing, *res->rel_p);
+            }
+            delete res;
+            if (cc)
+                break;
+        }
+    }
+#endif
+
 }/*}}}*/
 void process_bucket_region_run::operator()() {/*{{{*/
 

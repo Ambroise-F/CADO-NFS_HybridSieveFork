@@ -62,7 +62,9 @@ struct siever_config {
     unsigned long bucket_thresh = 0;  // bucket sieve primes >= bucket_thresh
     unsigned long bucket_thresh1 = 0; // primes above are 2-level bucket-sieved
     unsigned int td_thresh = 1024;
-    unsigned int skipped = 1;         // don't sieve below this
+    unsigned int skipped = 0;         // don't sieve below this
+    unsigned int no_trial_div = 0; //- disable trial div
+    unsigned int small_batch_max_prime = 3;
 
     public:
     /* the only way to access the four fields above */
@@ -151,6 +153,8 @@ struct siever_config {
                 ok = ok && sc.sides[side].lambda == o.sides[side].lambda;
                 ok = ok && sc.sides[side].lpb == o.sides[side].lpb;
                 ok = ok && sc.sides[side].mfb == o.sides[side].mfb;
+                ok = ok && sc.sides[side].mfbb == o.sides[side].mfbb;
+                ok = ok && sc.sides[side].sbmp == o.sides[side].sbmp;
                 ok = ok && sc.sides[side].ncurves == o.sides[side].ncurves;
             }
             return ok;

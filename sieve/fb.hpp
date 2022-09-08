@@ -23,6 +23,9 @@
 #include "mpz_poly.h"   // for cxx_mpz, cxx_mpz_poly
 #include "cado_poly.h"   // for MAX_DEGREE
 
+
+#include "cxx_mpz.hpp" //- for fb_product
+
 #include "fb-types.h"                  // for fbprime_t, slice_index_t, fbro...
 #include "las-base.hpp"                // for _padded_pod
 #include "las-config.h"                // for FB_MAX_PARTS
@@ -340,6 +343,10 @@ class fb_factorbase {
     unsigned long powlim;
 
     public:
+    cxx_mpz fb_product; //-
+    unsigned int small_batch_max_prime; //- todo
+
+    public:
     bool empty() const { return lim == 0; }
 
     private:
@@ -393,6 +400,13 @@ class fb_factorbase {
             std::array<fbprime_t, FB_MAX_PARTS> thresholds;
             fbprime_t td_thresh;
             fbprime_t skipped;
+            unsigned int no_trial_div;
+
+            //- small batch 
+            fbprime_t k_small_batch_max_prime;
+
+            cxx_mpz * k_fb_product;
+
             double scale;
             /* This might seem non obvious, but this parameters controls
              * the size of the slices, because we want to enforce some
@@ -671,6 +685,8 @@ class fb_factorbase {
          * We'd better have a single vector, and the position of the
          * "end-of-resieved" thing.
          */
+
+        cxx_mpz slicing_fb_product = 1;
 
         template<typename T>
         void foreach_slice(T & f) {

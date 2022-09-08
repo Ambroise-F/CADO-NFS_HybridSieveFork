@@ -166,7 +166,7 @@ divide_hints_from_bucket (factor_list_t &fl, mpz_t norm, const unsigned int N, c
 
 /* Extract all known primes (from bucket and small sieves) from the norm.
  * It also removes all the tiny factors that were not resieved and are
- * therefore trial-divided. (see -ththresh parameter)
+ * therefore trial-divided. (see -ththresh parameter) //- more like tdthresh??? 
  *
  * Note: there is another function trialdiv() without underscore that
  * does just the second step.
@@ -177,9 +177,10 @@ divide_known_primes (std::vector<uint64_t> & fl, cxx_mpz & norm, const unsigned 
            bucket_array_complete *purged,
 	   trialdiv_data const & td,
            int64_t a, uint64_t b,
-           fb_factorbase::slicing const & fbs)
+           fb_factorbase::slicing const & fbs,
+           unsigned int no_trial_div)
 {
-    const int trial_div_very_verbose = extern_trace_on_spot_ab(a,b);
+    const int trial_div_very_verbose = extern_trace_on_spot_ab(a,b) && (!no_trial_div);
 
     if (trial_div_very_verbose) {
         verbose_output_start_batch();
@@ -217,8 +218,14 @@ divide_known_primes (std::vector<uint64_t> & fl, cxx_mpz & norm, const unsigned 
         verbose_output_print(TRACE_CHANNEL, 0, "# Trial division by%s\n",
                 os.str().c_str());
     }
+    //- print ??
+    //-for(auto p : td) printf(" %lu", p.p);
+    //-printf("\n");
 
-    td.trial_divide(fl, norm);
+    // return; //- no trial divide
+    if (!no_trial_div) {
+        td.trial_divide(fl, norm);    
+    }
     size_t nf_td = fl.size();
 
     if (trial_div_very_verbose) {

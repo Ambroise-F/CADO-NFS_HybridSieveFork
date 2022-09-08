@@ -14,6 +14,9 @@
 #include "params.h"     // param_list_parse_*
 #include "verbose.h"    // verbose_output_print
 
+
+#include <iostream>
+
 /* siever_config stuff */
 
 void siever_config::declare_usage(cxx_param_list & pl)
@@ -23,12 +26,17 @@ void siever_config::declare_usage(cxx_param_list & pl)
 
     siever_side_config::declare_usage(pl);
 
+
     param_list_decl_usage(pl, "tdthresh", "trial-divide primes p/r <= ththresh (r=number of roots)");
     param_list_decl_usage(pl, "skipped", "primes below this bound are not sieved at all");
+    param_list_decl_usage(pl, "ntd", "disable trial div");
+    param_list_decl_usage(pl, "sbmp", "small batch max prime");
     param_list_decl_usage(pl, "bkthresh", "bucket-sieve primes p >= bkthresh (default 2^I)");
     param_list_decl_usage(pl, "bkthresh1", "2-level bucket-sieve primes in [bkthresh1,lim] (default=lim, meaning inactive)");
     param_list_decl_usage(pl, "bkmult", "multiplier to use for taking margin in the bucket allocation\n");
     param_list_decl_usage(pl, "unsievethresh", "Unsieve all p > unsievethresh where p|gcd(a,b)");
+
+    
 }
 
 void siever_config::display(int side, unsigned int bitsize) const /*{{{*/
@@ -118,6 +126,8 @@ bool siever_config::parse_default(siever_config & sc, cxx_param_list & pl, int n
     /* Parse optional siever configuration parameters */
     param_list_parse_uint(pl, "tdthresh", &(sc.td_thresh));
     param_list_parse_uint(pl, "skipped", &(sc.skipped));
+    param_list_parse_uint(pl, "ntd", &(sc.no_trial_div));
+    param_list_parse_uint(pl, "sbmp", &(sc.small_batch_max_prime));
 
     if (param_list_parse_uint(pl, "unsievethresh", &(sc.unsieve_thresh))) {
         verbose_output_print(0, 1, "# Un-sieving primes > %u\n",
@@ -174,7 +184,11 @@ fb_factorbase::key_type siever_config::instantiate_thresholds(int side) const
     fbprime_t fbb = sides[side].lim;
     fbprime_t bucket_thresh = this->bucket_thresh;
     fbprime_t bucket_thresh1 = this->bucket_thresh1;
-
+    //-fbprime_t small_batch_max_prime = sides[side].small_batch_max_prime; //- no idea what that does (yet again)
+    fbprime_t small_batch_max_prime = this->small_batch_max_prime; //- 
+    std::cout << "SBMP- = " << small_batch_max_prime << "\n";
+    std::cout << "SBMP- = " << this->small_batch_max_prime << "\n";
+    
     if (bucket_thresh == 0)
         bucket_thresh = 1UL << logI;
     if (bucket_thresh < (1UL << logI)) {
@@ -194,6 +208,9 @@ fb_factorbase::key_type siever_config::instantiate_thresholds(int side) const
         {{bucket_thresh, bucket_thresh1, fbb, fbb}},
             td_thresh,
             skipped,
+            no_trial_div,
+            small_batch_max_prime,
+            0,
             0,
             0
     };

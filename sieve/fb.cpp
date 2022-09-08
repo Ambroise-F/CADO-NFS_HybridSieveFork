@@ -43,6 +43,11 @@
 #include "u64arith.h"       // for u64arith_invmod
 #include "verbose.h"             // verbose_output_print
 #include "las-side-config.hpp"
+
+
+#include <iostream>
+
+
 struct qlattice_basis; // IWYU pragma: keep
 
 /* {{{ fb_log fb_pow and friends */
@@ -790,11 +795,18 @@ struct helper_functor_dispatch_small_sieved_primes {
              */
             size_t k0 = local_thresholds[0][1+n];
             size_t k1 = local_thresholds[1][1+n];
+            printf("no trial_div fb.cpp = %d\n", K.no_trial_div);
+            printf("small_batch_max_prime fb.cpp = %d\n", K.k_small_batch_max_prime);
+            printf("skipped fb.cpp = %d\n", K.skipped);
+            
             for(size_t k = k0 ; k < k1 ; ++k) {
                 FB_ENTRY_TYPE const & E(x[k]);
-                if (E.get_q() < K.skipped) {
+                if (E.get_q() < K.skipped) { //- small_batch_max prime ?? MYTODO
                     if (E.k == 1)
+                    {
                         S.small_sieve_entries.skipped.push_back(E.p);
+                        printf("p=%u; ", E.p); //-
+                    }
                     continue;
                 }
                 fb_entry_general G(E);
@@ -854,10 +866,12 @@ struct helper_functor_dispatch_small_sieved_primes {
                  */
                 if (E.k > 1 || E.p <= K.td_thresh * E.get_nr_roots()) {
                     S.small_sieve_entries.rest.push_back(G);
+                    //-printf("p=%u:k=%u; ", E.p, E.k); //-
                 } else {
                     S.small_sieve_entries.resieved.push_back(G);
                 }
             }
+            printf("\n"); //-
         }
 };
 
@@ -1130,6 +1144,9 @@ fb_factorbase::slicing::slicing(fb_factorbase const & fb, fb_factorbase::key_typ
         verbose_output_print(0, 2, "# Creating new slicing on side %d for %s\n",
                 fb.side, os.str().c_str());
     }
+
+    this->slicing_fb_product = fb.fb_product;   
+    std::cout << "slicing_fb_product = " << this->slicing_fb_product << " - fb_product = " << fb.fb_product << "\n";
 
     /* This uses our cache of thresholds, we expect it to be quick enough */
     std::array<threshold_pos, FB_MAX_PARTS+1> local_thresholds;
@@ -1405,7 +1422,13 @@ static void store_task_result(fb_factorbase &fb, task_info_t const & T)
         fb_cur.roots[0].r = T.r[j];
         fb_cur.invq = T.invq[j];
         pool.push_back(fb_cur);
+
+        if (fb_cur.k == 1 && fb_cur.p <= fb.small_batch_max_prime) {
+            fb.fb_product *= fb_cur.p;
+        }
     }
+    std::cout << "fbp in fb.cpp = " << fb.fb_product << "\n";//-
+
     ASSERT(std::is_sorted(pool.begin(), pool.end(), fb_entry_general::sort_byq()));
     fb.append(pool);
 }
@@ -1627,6 +1650,10 @@ fb_factorbase::read(const char * const filename)
 
         /* fb_fprint_entry (stdout, fb_cur); */
         nr_primes++;
+
+        if (C.k == 1 && C.p <= small_batch_max_prime) {
+            fb_product *= C.p; //-
+        }
 
         if (pool_size >= 1024) {
             /* enough to do a batch fill */
@@ -2018,6 +2045,13 @@ fb_factorbase::fb_factorbase(cxx_cado_poly const & cpoly, int side, cxx_param_li
      */
     std::vector<siever_side_config> all_sides;
     siever_side_config::parse(pl, all_sides, cpoly->nb_polys, { "lim" });
+    siever_side_config::parse(pl, all_sides, cpoly->nb_polys, { "sbmp" });
+
+    
+    fb_product = 1;
+    small_batch_max_prime = all_sides[side].sbmp;
+
+    
     lim = all_sides[side].lim;
     powlim = all_sides[side].powlim;
     if (powlim == ULONG_MAX) {

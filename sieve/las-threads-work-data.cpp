@@ -345,6 +345,7 @@ void nfs_work::prepare_for_new_q(las_info & las0) {
          * better.
          */
         wss.fbs = las0.get_factorbase_slicing(side, wss.fbK);
+        printf("get_trialdiv_data on side %d\n", side); //-
         wss.td = las0.get_trialdiv_data(side, wss.fbK, wss.fbs);
     }
     bk_multiplier = las0.get_bk_multiplier();

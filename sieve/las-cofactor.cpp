@@ -122,10 +122,18 @@ check_leftover_norm (cxx_mpz const & n, siever_side_config const & scs)
   size_t s = mpz_sizeinbase (n, 2);
   unsigned int lpb = scs.lpb;
   unsigned int mfb = scs.mfb;
+
+  //-unsigned long sbmp = scs.sbmp;
+
   unsigned int klpb;
   double nd, kB, B;
 
+  //-unsigned int mfbb  = scs.mfbb; //- unused ;)
+  //-printf("m=%u, s=%lu\n", mfbb, sbmp);
+
+
   ASSERT_ALWAYS(mpz_cmp_ui(n, 0) != 0);
+
 
   if (s > mfb)
     return 0; /* n has more than mfb bits, which is the given limit */
@@ -147,7 +155,7 @@ check_leftover_norm (cxx_mpz const & n, siever_side_config const & scs)
     {
       /* invariant: klpb = k * lpb, kB = B^(k+1) */
       if (nd < kB) /* L^k < n < B^(k+1) */
-	return 0;
+    return 0;
     }
 
   /* Here we have L < n < 2^mfb. If n is composite and we wrongly consider
@@ -193,6 +201,94 @@ check_leftover_norm (cxx_mpz const & n, siever_side_config const & scs)
     return 0; /* n is a pseudo-prime larger than L */
   return 1;
 }
+
+int
+check_leftover_norm_pre_batch (cxx_mpz const & n, siever_side_config const & scs)
+{
+  size_t s = mpz_sizeinbase (n, 2);
+  unsigned int lpb   = scs.lpb;
+  unsigned int mfb   = scs.mfb;
+  unsigned int mfbb  = scs.mfbb;
+  unsigned long sbmp = scs.sbmp;
+  unsigned int klpb;
+  double nd, kB, B;
+
+  ASSERT_ALWAYS(mpz_cmp_ui(n, 0) != 0);
+
+  // assert(mfbb < 1000);
+  // assert(sbmp == 200);
+
+  printf("m=%u, s=%lu\n", mfbb, sbmp);
+
+  if (s > mfbb || s > mfb)
+    return 0; /* n has more than mfb bits, which is the given limit */
+
+  if (scs.lim == 0) {
+      /* special case when not sieving */
+      return 1;
+  }
+
+  // TODO - fix everything else
+
+  if (s <= lpb)
+    return 1; /* case (a) */
+  /* Note that in the case where L > B^2, if we're below L it's still fine of
+     course, but we have no guarantee that our cofactor is prime... */
+
+  nd = mpz_get_d (n);
+  B = (double) scs.lim;
+  kB = B * B;
+  for (klpb = lpb; klpb < s; klpb += lpb, kB *= B)
+    {
+      /* invariant: klpb = k * lpb, kB = B^(k+1) */
+      if (nd < kB) /* L^k < n < B^(k+1) */
+    return 0;
+    }
+
+  /* Here we have L < n < 2^mfb. If n is composite and we wrongly consider
+     it prime, we'll return 0, thus we'll potentially miss a relation, but
+     we won't output a relation with a composite ideal, thus a base-2 strong
+     prime test is enough. */
+
+  // TODO: maybe we should pass the modulus to the facul machinery
+  // instead of reconstructing it.
+  int prime=0;
+  if (s <= MODREDCUL_MAXBITS) {
+      modulusredcul_t m;
+      ASSERT(mpz_fits_ulong_p(n));
+      modredcul_initmod_ul (m, mpz_get_ui(n));
+      prime = modredcul_sprp2(m);
+      modredcul_clearmod (m);
+  } else if (s <= MODREDC15UL_MAXBITS) {
+      modulusredc15ul_t m;
+      unsigned long t[2];
+      modintredc15ul_t nn;
+      size_t written;
+      mpz_export (t, &written, -1, sizeof(unsigned long), 0, 0, n);
+      ASSERT_ALWAYS(written <= 2);
+      modredc15ul_intset_uls (nn, t, written);
+      modredc15ul_initmod_int (m, nn);
+      prime = modredc15ul_sprp2(m);
+      modredc15ul_clearmod (m);
+  } else if (s <= MODREDC2UL2_MAXBITS) {
+      modulusredc2ul2_t m;
+      unsigned long t[2];
+      modintredc2ul2_t nn;
+      size_t written;
+      mpz_export (t, &written, -1, sizeof(unsigned long), 0, 0, n);
+      ASSERT_ALWAYS(written <= 2);
+      modredc2ul2_intset_uls (nn, t, written);
+      modredc2ul2_initmod_int (m, nn);
+      prime = modredc2ul2_sprp2(m);
+      modredc2ul2_clearmod (m);
+  } else {
+      prime = mpz_probab_prime_p (n, 1);
+  }
+  if (prime)
+    return 0; /* n is a pseudo-prime larger than L */
+  return 1;
+}
+
 
 /* This is the header-comment for the old factor_leftover_norm()
  * function, that is now deleted */

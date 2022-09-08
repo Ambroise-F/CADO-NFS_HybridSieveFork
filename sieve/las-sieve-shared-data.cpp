@@ -38,7 +38,7 @@ sieve_shared_data::side_data::side_data(int side,
                                         int nthreads)
   : f(cpoly->pols[side])
   , fb(cpoly, side, pl, param_list_lookup_string(pl, "fbc"), nthreads)
-{}
+{this->fb_product_shared_data = this->fb.fb_product;} //- ????
 
 
 /* FIXME: get_trialdiv_data is currently in las-trialdiv.cpp ; it belongs
@@ -64,6 +64,17 @@ void sieve_shared_data::load_factor_base(cxx_param_list & pl, int nthreads) /*{{
 }
 /*}}}*/
 /*}}}*/
+
+/*
+cxx_mpz const * get_fb_product_shared_data()
+{
+    return &fb_product_shared_data;
+}
+*/
+
+
+
+
 unsieve_data const * sieve_shared_data::get_unsieve_data(siever_config const & conf) /* {{{ */
 {
     std::pair<int, int> p(conf.logI, conf.logA);

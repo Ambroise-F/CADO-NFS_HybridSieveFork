@@ -55,6 +55,8 @@ struct sieve_shared_data {
          */
         fb_factorbase fb;
 
+        cxx_mpz fb_product_shared_data;
+
         inline bool no_fb() const { return fb.empty(); }
 
         fb_factorbase::slicing const * get_factorbase_slicing(fb_factorbase::key_type fbK) {
@@ -90,6 +92,8 @@ struct sieve_shared_data {
         public:
         /* in las-trialdiv.cpp */
         trialdiv_data const * get_trialdiv_data(fb_factorbase::key_type fbK, fb_factorbase::slicing const * fbs);
+
+        cxx_mpz const get_fb_product_shared_data() {return fb_product_shared_data;}
 
         side_data(int side, cxx_cado_poly const & cpoly, cxx_param_list & pl, int nthreads = 1);
         side_data() = default;

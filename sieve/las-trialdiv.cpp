@@ -69,10 +69,20 @@ trialdiv_data const * sieve_shared_data::side_data::get_trialdiv_data(fb_factorb
     /* Maybe we can use the factor base. If we have one, of course ! */
     unsigned long pmax_sofar = 0;
 
+
+    
     for(auto const & pp : fbs->small_sieve_entries.rest) {
         if (pp.k > 1) continue;
         trialdiv_primes.push_back(pp.p);
     }
+
+    //- 
+    printf("trialdiv_primes : ");
+    for(auto const & p : trialdiv_primes) {
+        printf("%lu;", p);
+    }
+    printf("\n");
+
     if (!trialdiv_primes.empty()) {
         cxx_mpz zz(trialdiv_primes.back());
         mpz_nextprime(zz, zz);

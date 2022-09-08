@@ -115,6 +115,11 @@ struct las_info : public las_parallel_desc, private NonCopyable {
     trialdiv_data const * get_trialdiv_data(int side, fb_factorbase::key_type fbK, fb_factorbase::slicing const * fbs) {
         return local_cache().sides[side].get_trialdiv_data(fbK, fbs);
     }
+
+    cxx_mpz const get_fb_product_shared_data(int side) const {//-int side, fb_factorbase::key_type fbK, fb_factorbase::slicing const * fbs) {
+        return local_cache().sides[side].get_fb_product_shared_data(); //- deuxième get_fb_product dans las-sieve-shared-data.cpp
+    }
+
     unsieve_data const * get_unsieve_data(siever_config const & conf) {
         return local_cache().get_unsieve_data(conf);
     }

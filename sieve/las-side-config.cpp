@@ -7,6 +7,8 @@ void siever_side_config::declare_usage(cxx_param_list & pl)
     param_list_decl_usage(pl, "lim", "sieving bounds per side");
     param_list_decl_usage(pl, "lpb", "large prime bounds per side, in bits");
     param_list_decl_usage(pl, "mfb", "post-sieve cofactor bounds per side, in bits");
+    param_list_decl_usage(pl, "mfbb", "post-sieve small batch bounds per side, in bits");
+    param_list_decl_usage(pl, "sbmp", "max prime to be in the factor base of the batch factoring after sieving");
     param_list_decl_usage(pl, "lambda", "post-sieve qualification multipliers per side");
     param_list_decl_usage(pl, "powlim", "limits on powers sieved per side");
     param_list_decl_usage(pl, "ncurves", "cofactoring effort (number of curves) per side");
@@ -47,6 +49,8 @@ std::map<std::string, int> siever_side_config::parse(cxx_param_list & pl, std::v
     DISPATCH_PARAMETER(unsigned long, powlim, ULONG_MAX, ARGS_PER_SIDE_DEFAULT_COPY_PREVIOUS);
     DISPATCH_PARAMETER(unsigned int, lpb, UINT_MAX, ARGS_PER_SIDE_DEFAULT_COPY_PREVIOUS);
     DISPATCH_PARAMETER(unsigned int, mfb, UINT_MAX, ARGS_PER_SIDE_DEFAULT_COPY_PREVIOUS);
+    DISPATCH_PARAMETER(unsigned int, mfbb, UINT_MAX, ARGS_PER_SIDE_DEFAULT_COPY_PREVIOUS);
+    DISPATCH_PARAMETER(unsigned long, sbmp, UINT_MAX, ARGS_PER_SIDE_DEFAULT_COPY_PREVIOUS);
     DISPATCH_PARAMETER(int, ncurves, -1, ARGS_PER_SIDE_DEFAULT_COPY_PREVIOUS);
     DISPATCH_PARAMETER(double, lambda, 0, ARGS_PER_SIDE_DEFAULT_COPY_PREVIOUS);
     DISPATCH_PARAMETER2(std::string, fbfilename, "fb", "", ARGS_PER_SIDE_DEFAULT_AS_IS);
