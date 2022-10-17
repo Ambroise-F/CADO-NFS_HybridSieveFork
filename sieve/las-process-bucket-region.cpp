@@ -63,6 +63,8 @@
 #include <cstdio>
 #include <iostream>
 
+#include "smallbatch.hpp"
+
 MAYBE_UNUSED static inline void subusb(unsigned char *S1, unsigned char *S2, ssize_t offset)
 {
     int ex = (unsigned int) S1[offset] - (unsigned int) S2[offset];
@@ -853,7 +855,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
     }
     //- end for !
 
-#if 1   
+#if 0   
     //-std::cout << "end for\n";
     for (auto cur_last : surv_pre_batch) {
         if (ws.las.batch || ws.las.batch_print_survivors.filename)
@@ -888,6 +890,31 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 break;
         }
     }
+#endif
+#if 1
+    int res; //- todo
+    cxx_mpz fbp0 = ws.sides[0].fbs->slicing_fb_product;
+    cxx_mpz fbp1 = ws.sides[1].fbs->slicing_fb_product;
+
+
+    fprintf(stderr, "size is %lu\n", surv_pre_batch.size());
+    if (surv_pre_batch.size() > 0){
+
+        gmp_fprintf(stderr, "1st surv pre batch   = %Zd\n", surv_pre_batch[0].norm[0]);
+        std::cout << "1st surv pre batch   = " << surv_pre_batch[0].norm[0] << "\n"; 
+
+        res = sm_batch(surv_pre_batch, fbp0, 0); //- primes ?
+        assert(res != -1);
+
+        //- handle res, primes ?
+        //gmp_fprintf(stderr, "1st surv post batch  = %Zd\n", surv_pre_batch[0].norm[0]);
+        //gmp_fprintf(stderr, "1st surv smooth part = %Zd [%p]\n\n", surv_pre_batch[0].sm_smoothpart[0], &(surv_pre_batch[0].sm_smoothpart[0]));
+
+        gmp_fprintf(stderr, "[IN L-P-B-R] norm[0] = %Zd\n", surv_pre_batch[0].norm[0]);
+        gmp_fprintf(stderr, "[IN L-P-B-R] sm_s[0] = %Zd\n-----------------------\n", surv_pre_batch[0].sm_smoothpart[0]);
+    }
+
+
 #endif
 
 }/*}}}*/

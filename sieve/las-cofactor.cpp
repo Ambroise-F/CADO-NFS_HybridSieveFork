@@ -18,6 +18,8 @@
 #include "modredc_ul.h"    // for modredcul_clearmod, modredcul_initmod_ul
 #include "params.h"
 
+#include "smallbatch.hpp"
+
 void cofactorization_statistics::declare_usage(cxx_param_list & pl)
 {
     param_list_decl_usage(pl, "stats-cofact", "write statistics about the cofactorization step in file xxx");

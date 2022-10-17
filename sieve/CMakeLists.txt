@@ -64,6 +64,7 @@ add_library(las_core_b OBJECT
         las-descent.cpp
         las-divide-primes.cpp
         las-sieve2357.cpp
+	smallbatch.cpp
 )
 
 add_library(las_core_c OBJECT

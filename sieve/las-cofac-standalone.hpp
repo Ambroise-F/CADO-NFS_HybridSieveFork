@@ -17,9 +17,10 @@ template <typename T> struct lock_guarded_container; // IWYU pragma: keep
 
 struct cofac_standalone {
     std::vector<uint8_t> S;
-    std::vector<cxx_mpz> norm;
+    std::vector<cxx_mpz> norm; // size 2 (??)
     std::vector<factor_list_t> factors;
     std::vector<std::vector<cxx_mpz>> lps;
+    cxx_mpz sm_smoothpart[2];
     int64_t a;
     uint64_t b;
 #ifdef SUPPORT_LARGE_Q
