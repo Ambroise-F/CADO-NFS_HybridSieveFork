@@ -585,15 +585,15 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
         //- ws.conf.sides[side].fbK.k_fb_product vs ws.sides[side].fbK.k_fb_product;
         
-        cxx_mpz fbp0; //- = ws.sides[0].fbK.k_fb_product;
-        cxx_mpz fbp1; //- = ws.sides[1].fbK.k_fb_product;
+        // cxx_mpz fbp0; //- = ws.sides[0].fbK.k_fb_product;
+        // cxx_mpz fbp1; //- = ws.sides[1].fbK.k_fb_product;
 
         
-        fbp0 = ws.sides[0].fbs->slicing_fb_product;
-        fbp1 = ws.sides[1].fbs->slicing_fb_product;
+        // fbp0 = ws.sides[0].fbs->slicing_fb_product;
+        // fbp1 = ws.sides[1].fbs->slicing_fb_product;
 
-        const cxx_mpz fbp0sd = ws.las.get_fb_product_shared_data(0);
-        const cxx_mpz fbp1sd = ws.las.get_fb_product_shared_data(1);
+        // const cxx_mpz fbp0sd = ws.las.get_fb_product_shared_data(0);
+        // const cxx_mpz fbp1sd = ws.las.get_fb_product_shared_data(1);
 
         // if (fbp0 > (cxx_mpz)0) 
         // {
@@ -660,7 +660,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                      * by a product tree, there's no reason to bother doing
                      * trial division at this point (or maybe there is ?
                      * would that change the bit size significantly ?) */
-                    rep.survivors.check_leftover_norm_on_side[side] ++;
+                    rep.survivors.check_leftover_norm_on_side[side] ++; //- stats
                     continue;
                 }
 
@@ -699,7 +699,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 siever_side_config & scs = ws.conf.sides[side]; //-
                 
 
-                pass = check_leftover_norm (cur.norm[side], scs); //-ws.conf.sides[side]);
+                pass = check_leftover_norm_pre_batch (cur.norm[side], scs); //-ws.conf.sides[side]);
 
                 /*
 
@@ -813,7 +813,6 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
         rep.survivors.enter_cofactoring++;
 
-
         //- bypass
         surv_pre_batch.push_back(cur);
 
@@ -855,7 +854,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
     }
     //- end for !
 
-#if 0   
+#if 0 //- old version + DEBUG
     //-std::cout << "end for\n";
     for (auto cur_last : surv_pre_batch) {
         if (ws.las.batch || ws.las.batch_print_survivors.filename)
@@ -893,31 +892,210 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 #endif
 #if 1
     int res; //- todo
-    cxx_mpz fbp0 = ws.sides[0].fbs->slicing_fb_product;
-    cxx_mpz fbp1 = ws.sides[1].fbs->slicing_fb_product;
+    //- cxx_mpz fbp0 = ws.sides[0].fbs->slicing_fb_product;
+    //- cxx_mpz fbp1 = ws.sides[1].fbs->slicing_fb_product;
 
-
-    fprintf(stderr, "size is %lu\n", surv_pre_batch.size());
     if (surv_pre_batch.size() > 0){
 
-        gmp_fprintf(stderr, "1st surv pre batch   = %Zd\n", surv_pre_batch[0].norm[0]);
-        std::cout << "1st surv pre batch   = " << surv_pre_batch[0].norm[0] << "\n"; 
 
-        res = sm_batch(surv_pre_batch, fbp0, 0); //- primes ?
-        assert(res != -1);
 
-        //- handle res, primes ?
-        //gmp_fprintf(stderr, "1st surv post batch  = %Zd\n", surv_pre_batch[0].norm[0]);
-        //gmp_fprintf(stderr, "1st surv smooth part = %Zd [%p]\n\n", surv_pre_batch[0].sm_smoothpart[0], &(surv_pre_batch[0].sm_smoothpart[0]));
+        /* 
+         * it batches on first_side then gets rid of survivors with bigger leftover norms
+         * it then batches a second time on fewer survivors on first_side^1
+         * not clear which side it is better to start with :
+         * side 0 means batching with a smaller factor base
+         * side 1 might mean getting rid of more survivors
+         */
 
-        gmp_fprintf(stderr, "[IN L-P-B-R] norm[0] = %Zd\n", surv_pre_batch[0].norm[0]);
-        gmp_fprintf(stderr, "[IN L-P-B-R] sm_s[0] = %Zd\n-----------------------\n", surv_pre_batch[0].sm_smoothpart[0]);
+        int first_side = 1;
+
+        
+        for(int i = 0 ; i < 2; i++) {
+            int side = first_side ^ i;
+            auto conf_side = ws.conf.sides[side];
+            //nfs_work::side_data & wss(ws.sides[side]);
+
+            cxx_mpz fbp = ws.sides[side].fbs->slicing_fb_product;
+
+            //-gmp_fprintf(stderr, "1st surv pre batch   = %Zd\n", surv_pre_batch[0].norm[side]);
+            //-std::cout << "1st surv pre batch   = " << surv_pre_batch[0].norm[side] << "\n"; 
+
+
+            gmp_fprintf(stderr, "===============\nbatching  side %d, %ld survivors\n===============\n", side, surv_pre_batch.size());
+
+            res = sm_batch(surv_pre_batch, fbp, side); //- primes ?
+            assert(res != -1);      
+/*
+            std::vector<int> filtered;
+            //- for (auto &surv : surv_pre_batch)
+            for (int j = 0; j < surv.size(); j++)
+            {
+                int pass = check_leftover_norm_post_batch(surv.norm[side], ws.conf.sides[side]);
+                if (!pass)
+                    filtered.push_back(j)
+            }
+*/
+            surv_pre_batch.erase(
+                remove_if(
+                    surv_pre_batch.begin(),
+                    surv_pre_batch.end(),
+                    [conf_side, side](cofac_standalone checked_surv) {
+                        return (!check_leftover_norm_post_batch(checked_surv.norm[side], conf_side));}
+                ), 
+                surv_pre_batch.end());
+
+            gmp_fprintf(stderr, "===============\nfiltering side %d, %ld survivors\n===============\n", side, surv_pre_batch.size());
+
+/*
+            for (int j : filtered) {
+                surv[j].remove
+            }
+*/
+            if (surv_pre_batch.size() == 0)
+                break;
+        }
+        if (surv_pre_batch.size() > 0) {
+            for(int side = 0 ; side < 2; side++) {
+                for (auto &surv : surv_pre_batch) {
+                    nfs_work::side_data & wss(ws.sides[side]);
+
+
+#if 0  //- DEBUG
+                    gmp_fprintf(stderr, "[BEFORE TRIALDIV], nb_fac = %lu\n", surv.factors[side].size());
+                    for (auto fac : surv.factors[side])
+                    {
+                        gmp_fprintf(stderr, "%ld; ", fac);
+                    }
+                    gmp_fprintf(stderr, "\n");
+                    
+                    gmp_fprintf(stderr, "[BEFORE TRIALDIV], nb_lps = %lu\n", surv.lps[side].size());
+                    for (auto fac : surv.lps[side])
+                    {
+                        gmp_fprintf(stderr, "%ld; ", fac);
+                    }
+                    gmp_fprintf(stderr, "\n");
+#endif
+
+#if 1
+                    wss.td->trial_divide(surv.factors[side], surv.sm_smoothpart[side]);
+                    // delete &surv.sm_smoothpart[side];
+#endif
+
+#if 0 //- DEBUG
+                    // tmp test
+                    cxx_mpz tmp_mpz;
+
+                    for (auto fac : surv.factors[side]){
+                        mpz_init_set_ui (tmp_mpz, fac);
+                        surv.lps[side].push_back(tmp_mpz);
+                    }
+#endif
+
+                    std::sort (surv.factors[side].begin(), surv.factors[side].end()); //- important ?? ICI !
+                    
+#if 0 //- DEBUG
+                    gmp_fprintf(stderr, "[AFTER  TRIALDIV], nb_fac = %lu\n", surv.factors[side].size());
+                    gmp_fprintf(stderr, "[TEST *D0], side = %d, nb_fac = %lu, ptr = %p\n", side, surv.factors[side].size(), &surv);
+                    
+                    for (auto fac : surv.factors[side])
+                    {
+                        gmp_fprintf(stderr, "%ld; ", fac);
+                    }
+                    gmp_fprintf(stderr, "\n");
+
+                    gmp_fprintf(stderr, "[TEST *D1], side = %d, nb_fac = %lu, ptr = %p\n", side, surv.factors[side].size(), &surv);
+
+                    gmp_fprintf(stderr, "[AFTER  TRIALDIV], nb_lps = %lu\n", surv.lps[side].size());
+                    std::sort (surv.lps[side].begin(), surv.lps[side].end()); //- important ??
+                    for (auto fac : surv.lps[side])
+                    {
+                        gmp_fprintf(stderr, "%ld; ", fac);
+                    }
+                    gmp_fprintf(stderr, "\n");
+#endif
+
+        /*            divide_known_primes (surv.factors[0], surv.norm[0], N, x,
+                                handle_2,
+                                &sides[0].primes,
+                                &sides[0].purged,
+                                *wss.td,
+                                surv.a, surv.b,
+                                *wss.fbs,
+                                no_trial_div);
+        */
+
+                }
+            }
+
+            for (auto &cur_last : surv_pre_batch) {
+
+#if 0
+                if (ws.las.batch || ws.las.batch_print_survivors.filename)
+                {
+                    /* see above */
+                    rep.reports++;
+                    if (ws.conf.sublat_bound && !cur_last.ab_coprime()) continue;
+                    /* make sure threads don't write the cofactor list at the
+                     * same time !!! */
+                    cur_last.transfer_to_cofac_list(ws.cofac_candidates, aux_p->doing);
+                    std::cout << "transfer_to_cofac_list\n";
+                    continue; /* we deal with all cofactors at the end of subjob */
+                }
+#endif
+
+#if 1 // ECM
+                if (ws.las.batch || ws.las.batch_print_survivors.filename)
+                    fprintf(stderr, "[[ERROR]] ws.las.batch || ws.las.batch_print_survivors.filename\n");
+                if (dlp_descent)
+                    fprintf(stderr, "[[ERROR]] dlp_descent\n");
+
+#if 0
+                gmp_fprintf(stderr, "[TEST *D3], side = 0, nb_fac = %lu, ptr = %p\n", cur_last.factors[0].size(), &cur_last);
+                gmp_fprintf(stderr, "[TEST *D3], side = 1, nb_fac = %lu, ptr = %p\n", cur_last.factors[1].size(), &cur_last);
+#endif
+                auto D = new detached_cofac_parameters(wc_p, aux_p, std::move(cur_last)); //- ICI ?
+                worker->get_pool().add_task(detached_cofac, D, N, 1); 
+
+#endif
+
+#if 0
+                if (!dlp_descent) {
+                    /* We must make sure that we join the async threads at some
+                     * point, otherwise we'll leak memory. It seems more appropriate
+                     * to batch-join only, so this is done at the las_subjob level */
+                    // worker->get_pool().get_result(1, false);
+                    worker->get_pool().add_task(detached_cofac, D, N, 1); /* id N, queue 1 */
+                } else {
+                    /* We must proceed synchronously for the descent */
+                    auto res = dynamic_cast<detached_cofac_result*>(detached_cofac(worker, D, N));
+                    bool cc = false;
+                    if (res->rel_p) {
+                        cc = register_contending_relation(ws.las, ws.Q.doing, *res->rel_p);
+                    }
+                    delete res;
+                    if (cc)
+                        break;
+                }
+#endif
+            }
+        }
     }
+    
+    // surv_pre_batch.clear();
+    /// where leak??
+
+
 
 
 #endif
 
+//-fprintf(stderr, "OUT L-P-B-R\n");
+
+
 }/*}}}*/
+
+
+    
 void process_bucket_region_run::operator()() {/*{{{*/
 
     int nsides = sides.size();

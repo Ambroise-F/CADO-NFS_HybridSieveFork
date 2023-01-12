@@ -119,7 +119,7 @@ cofactorization_statistics::~cofactorization_statistics()
                         -> cannot yield a relation
 */
 int
-check_leftover_norm (cxx_mpz const & n, siever_side_config const & scs)
+check_leftover_norm_legacy (cxx_mpz const & n, siever_side_config const & scs)
 {
   size_t s = mpz_sizeinbase (n, 2);
   unsigned int lpb = scs.lpb;
@@ -207,11 +207,29 @@ check_leftover_norm (cxx_mpz const & n, siever_side_config const & scs)
 int
 check_leftover_norm_pre_batch (cxx_mpz const & n, siever_side_config const & scs)
 {
+    //- doit remplacer cln
+  size_t s = mpz_sizeinbase (n, 2);
+  unsigned int mfb = scs.mfb;
+  unsigned int mfbb = scs.mfbb;
+  
+  ASSERT_ALWAYS(mpz_cmp_ui(n, 0) != 0);
+
+  if (s > mfbb && s > mfb)
+    return 0; /* n has more than mfb bits, which is the given limit */
+  
+  return 1;
+}
+
+
+int
+check_leftover_norm_post_batch (cxx_mpz const & n, siever_side_config const & scs)
+{
+    //- j'y touche pas pour le moment
   size_t s = mpz_sizeinbase (n, 2);
   unsigned int lpb   = scs.lpb;
   unsigned int mfb   = scs.mfb;
   unsigned int mfbb  = scs.mfbb;
-  unsigned long sbmp = scs.sbmp;
+  //unsigned long sbmp = scs.sbmp;
   unsigned int klpb;
   double nd, kB, B;
 
@@ -220,10 +238,12 @@ check_leftover_norm_pre_batch (cxx_mpz const & n, siever_side_config const & scs
   // assert(mfbb < 1000);
   // assert(sbmp == 200);
 
-  printf("m=%u, s=%lu\n", mfbb, sbmp);
+  fprintf(stderr, "checking leftover norm : %lu bits (should be below m=%u bits)\n", s, mfbb);
 
   if (s > mfbb || s > mfb)
     return 0; /* n has more than mfb bits, which is the given limit */
+
+  
 
   if (scs.lim == 0) {
       /* special case when not sieving */
@@ -330,6 +350,11 @@ int factor_both_leftover_norms(
     int is_smooth[2] = {FACUL_MAYBE, FACUL_MAYBE};
     /* To remember if a cofactor is already factored.*/
 
+    //- test factors size + factors found by facul?
+    //gmp_fprintf(stderr, "[INSIDE las-cofactor - before0], nb_fac = %lu [0]\n", factors[0].size());
+    //gmp_fprintf(stderr, "[INSIDE las-cofactor - before0], nb_fac = %lu [1]\n", factors[1].size());
+
+    //- gmp_fprintf(stderr, "    ∟ inside factor_both_leftover_norms 0\n");
     for (int side = 0; side < 2; side++) {
         factors[side].clear();
 
@@ -338,9 +363,23 @@ int factor_both_leftover_norms(
         if (mpz_get_d (n[side]) < B * B)
             is_smooth[side] = FACUL_SMOOTH;
     }
+    //- gmp_fprintf(stderr, "    ∟ inside factor_both_leftover_norms 1\n");
+    
 
     /* call the facul library */
+
+    //- test factors size + factors found by facul?
+    //gmp_fprintf(stderr, "[INSIDE las-cofactor - before1], nb_fac = %lu [0]\n", factors[0].size());
+    //gmp_fprintf(stderr, "[INSIDE las-cofactor - before1], nb_fac = %lu [1]\n", factors[1].size());
+
+    //gmp_fprintf(stderr, "[AFTER  TRIALDIV], nb_fac = %lu\n", surv.factors[side].size());
+
+
     std::vector<int> facul_code = facul_both (factors, n, strat, is_smooth);
+
+    //- gmp_fprintf(stderr, "    ∟ inside factor_both_leftover_norms 2\n");
+    
+
 
     if (is_smooth[0] != FACUL_SMOOTH || is_smooth[1] != FACUL_SMOOTH) {
         if (is_smooth[0] == FACUL_NOT_SMOOTH || is_smooth[1] == FACUL_NOT_SMOOTH)
@@ -348,6 +387,8 @@ int factor_both_leftover_norms(
         else
             return 0;
     }
+    //- gmp_fprintf(stderr, "    ∟ inside factor_both_leftover_norms 3\n");
+    
 
     /* now we know both cofactors are smooth */
     for (int side = 0; side < 2; side++) {
@@ -365,6 +406,16 @@ int factor_both_leftover_norms(
             factors[side].push_back(n[side]);
         }
     }
+/*-    gmp_fprintf(stderr, "    ∟ inside factor_both_leftover_norms 4\n");
+    
+    //-gmp_fprintf(stderr, "[INSIDE las-cofactor - after], nb_fac = %lu [0]\n", factors[0].size());
+    //-gmp_fprintf(stderr, "[INSIDE las-cofactor - after], nb_fac = %lu [1]\n", factors[1].size());
+    
+    //-if (factors[0].size()) // en fait c'est probablement moi qui ai écrit les lignes en dessous : débugging inutile
+    if (factors[0].size() && factors[1].size())
+        gmp_fprintf(stderr, "%x, %x\n", factors[0][0], factors[1][0]);
+    gmp_fprintf(stderr, "    ∟ inside factor_both_leftover_norms 5\n");*/
+    
     return 1; /* both cofactors are smooth */
 }
 

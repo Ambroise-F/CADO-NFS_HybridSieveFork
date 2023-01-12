@@ -95,6 +95,11 @@ void remainder_tree_simple(mpz_t ** T, size_t *w, mpz_t P, int h, int side)
         
 }
 
+
+
+
+
+
 /* Clear the product tree. */
 void clear_product_tree(mpz_t ** T, unsigned long n, size_t *w)
 {
@@ -106,6 +111,33 @@ void clear_product_tree(mpz_t ** T, unsigned long n, size_t *w)
 		free(T[i]);
 	}
 	free(T);
+}
+
+
+void clear_product_tree2(mpz_t ** T, unsigned long n, size_t *w)
+{
+	int h = tree_height(MAX_N);
+	for (int i = 0; i <= h; i++) {
+                int w = 1 + ((n - 1) >> i);
+                
+                for (size_t j = 0; j < w; j++)
+                        mpz_clear(T[i][j]);
+                free(T[i]);
+        }
+        free(T);
+}
+
+void clear_product_tree3(mpz_t ** T)
+{
+	int h = tree_height(MAX_N);
+	for (int i = 0; i <= h; i++) {
+                int w = 1 + ((MAX_N - 1) >> i);
+
+                for (size_t j = 0; j < w; j++)
+                        mpz_clear(T[i][j]);
+                free(T[i]);
+        }
+        free(T);
 }
 
 
@@ -159,6 +191,7 @@ void product(mpz_t *A, mpz_t x, int begin, int end)
 //- instead of a main
 int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
+
 	// todo : change return (to actual facto)
 	// todo : make it so that facto tree is not computed _every fucking time_
 
@@ -172,7 +205,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
         
         mpz_t **T = sm_init_product_tree(MAX_N);
-
+        //mpz_t **T2= sm_init_product_tree(MAX_N);
 
 	double start = wtime();
 
@@ -207,7 +240,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 		 * have some cost, the subsequent ones are supposedly cheap
 		 * enough */
 	        mpz_set_ui(smooth, 1);
-	        gmp_fprintf(stderr, "[PRE  BATCH] norm[%d] = %Zd           (side = %d)\n", j, surv[j].norm[side].x, side);
+	        //-gmp_fprintf(stderr, "[PRE  BATCH] norm[%d] = %Zd           (side = %d)\n", j, surv[j].norm[side].x, side);
         	for (;;) {
         		//if (mpz_cmp_ui(T[0][j], 1) == 0)
 			//	break;
@@ -218,25 +251,33 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
                         mpz_mul(smooth, smooth, T[0][j]);
 		}
                 // mpz_swap(surv[j].norm[side], smooth); //- no swap, remainder/non-smooth part should be in surv[j].norm[side], instead, smooth part should go in surv[j].factors or smthg?
+		
 		mpz_init_set(surv[j].sm_smoothpart[side], smooth);
 
-		gmp_fprintf(stderr, "[POST BATCH] norm[%d] = %Zd\n", j, surv[j].norm[side]);
-		gmp_fprintf(stderr, "[POST BATCH] sm_s[%d] = %Zd\n", j, surv[j].sm_smoothpart[side]);
-		fprintf(stderr, "-------------------\n");
-
+		//-gmp_fprintf(stderr, "[POST BATCH] norm[%d] = %Zd\n", j, surv[j].norm[side]);
+		//-gmp_fprintf(stderr, "[POST BATCH] sm_s[%d] = %Zd\n", j, surv[j].sm_smoothpart[side]);
+		//fprintf(stderr, "-------------------\n");
 
 
                 //version alternative: (les perf ont l'air rigoureusement équivalentes...)
                 //mpz_powm_ui(T[0][j], T[0][j], 17, norms.A[done + j]);
                 //mpz_gcd(norms.A[done + j], T[0][j], norms.A[done + j]);
 	}
-	// clear_product_tree(T, n, w);
+	//clear_product_tree2(T, n, w);
+	clear_product_tree3(T);
+
+
+
+	//clear_product_tree(T2, n, w);
+
         done += n;
         batches += 1;
 
         fprintf(stderr, "-- batch_fac done\n");
 
+        mpz_clear(smooth);
 
+        //delete &fb_product; //no
 	
 	double stop = wtime();
 

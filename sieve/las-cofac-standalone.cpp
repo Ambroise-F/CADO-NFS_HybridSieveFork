@@ -105,6 +105,8 @@ void cofac_standalone::print_as_survivor(FILE * f) {/*{{{*/
             (mpz_srcptr) norm[1]);
 #endif
 }/*}}}*/
+
+    //- wtf is this?
 relation cofac_standalone::get_relation(las_todo_entry const & doing) {/*{{{*/
 #ifndef SUPPORT_LARGE_Q
     relation rel(a, b);

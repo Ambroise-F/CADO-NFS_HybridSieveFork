@@ -320,7 +320,7 @@ sq_finds_relation(las_info const & las,
 
   /* Check that the cofactors are within the mfb bound */
   for (int side = 0; side < nsides; ++side) {
-    if (!check_leftover_norm (cof[side], conf.sides[side])) {
+    if (!check_leftover_norm_post_batch (cof[side], conf.sides[side])) {
       verbose_output_vfprint(0, VERBOSE_LEVEL, gmp_vfprintf,
           "# DUPECHECK cofactor %Zd is outside bounds\n",
           (__mpz_struct*) cof[side]);

@@ -47,6 +47,13 @@ detached_cofac_result * detached_cofac_inner(worker_thread * worker, detached_co
 
     cofac_standalone & cur(*param);
 
+/*    gmp_fprintf(stderr, "[las-detached-cofac, 0], nb_fac = %lu\n", cur.factors[0].size());
+    for (auto fac : cur.factors[0])
+    {
+        gmp_fprintf(stderr, "%ld; ", fac);
+    }
+    gmp_fprintf(stderr, "\n");*/
+
     int nsides = las.cpoly->nb_polys;
 
     std::vector<int> cof_bitsize(nsides, 0);
@@ -55,8 +62,18 @@ detached_cofac_result * detached_cofac_inner(worker_thread * worker, detached_co
     SIBLING_TIMER(timer, "cofactoring"); // aka factor_both_leftover_norms
     TIMER_CATEGORY(timer, cofactoring_mixed());
 
+    //-gmp_fprintf(stderr, "  ∟ BEFORE factor_both_leftover_norms\n");
     int pass = cur.factor_both_leftover_norms(wc);
     rep.survivors.cofactored += (pass != 0);
+    //-gmp_fprintf(stderr, "  ∟ AFTER factor_both_leftover_norms\n");
+
+
+    /*gmp_fprintf(stderr, "[las-detached-cofac, 1], nb_fac = %lu\n", cur.factors[0].size());
+    for (auto fac : cur.factors[0])
+    {
+        gmp_fprintf(stderr, "%ld; ", fac);
+    }
+    gmp_fprintf(stderr, "\n");*/
 
     auto res = new detached_cofac_result;
 
@@ -133,7 +150,7 @@ detached_cofac_result * detached_cofac_inner(worker_thread * worker, detached_co
 
         // verbose_output_print(0, 3, "# i=%d, j=%u, lognorms = %hhu, %hhu\n", i, j, cur.S[0], cur.S[1]);
 
-        os << dup_comment << rel << "\n";
+        os << dup_comment << rel << "\n"; //- print relation
 
         if(las.galois != NULL) {
             // adding relations on the fly in Galois cases
@@ -178,6 +195,9 @@ task_result * detached_cofac(worker_thread * worker, task_parameters * _param, i
      * activated above.
      */
     cofac_standalone & cur(*param);
+    //-gmp_fprintf(stderr, "[TEST *D4], nb_fac = %lu, ptr = %p\n", cur.factors[0].size(), &cur);
+            
+
     detached_cofac_result * res;
     if (dlp_descent) {
         CHILD_TIMER(timer, __func__);

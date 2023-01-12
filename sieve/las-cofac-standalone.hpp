@@ -21,6 +21,7 @@ struct cofac_standalone {
     std::vector<factor_list_t> factors;
     std::vector<std::vector<cxx_mpz>> lps;
     cxx_mpz sm_smoothpart[2];
+    //std::vector<cxx_mpz> sm_smoothpart;
     int64_t a;
     uint64_t b;
 #ifdef SUPPORT_LARGE_Q
