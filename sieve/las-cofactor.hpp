@@ -48,7 +48,11 @@ public:
     static void declare_usage(cxx_param_list & pl);
 };
 
-int check_leftover_norm (cxx_mpz const & n, siever_side_config const & sc);
+int check_leftover_norm_legacy (cxx_mpz const & n, siever_side_config const & sc);
+
+int check_leftover_norm_pre_batch (cxx_mpz const & n, siever_side_config const & sc);
+int check_leftover_norm_post_batch (cxx_mpz const & n, siever_side_config const & sc);
+
 
 int factor_both_leftover_norms(
         std::vector<cxx_mpz> & norms,
