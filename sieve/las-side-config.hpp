@@ -22,7 +22,7 @@ struct siever_side_config {
 
     unsigned int lpb;     /* large prime bound is 2^lpb */
     unsigned int mfb;     /* bound for residuals is 2^mfb */
-    unsigned int mfbb;    /* bound for residuals is 2^mfbb */
+    unsigned int mfb_pre_ecm;    /* bound for residuals is 2^mfb_pre_ecm */
     unsigned long sbmp;   /* bound for factors in batch fac */
     int ncurves;          /* number of cofactorization curves */
     double lambda;        /* lambda sieve parameter */
@@ -41,7 +41,7 @@ struct siever_side_config {
     SIDE_CONFIG_COLLECTOR(siever_side_config, powlim)
     SIDE_CONFIG_COLLECTOR(siever_side_config, lpb)
     SIDE_CONFIG_COLLECTOR(siever_side_config, mfb)
-    SIDE_CONFIG_COLLECTOR(siever_side_config, mfbb)
+    SIDE_CONFIG_COLLECTOR(siever_side_config, mfb_pre_ecm)
     SIDE_CONFIG_COLLECTOR(siever_side_config, sbmp)
     SIDE_CONFIG_COLLECTOR(siever_side_config, ncurves)
     SIDE_CONFIG_COLLECTOR(siever_side_config, lambda)

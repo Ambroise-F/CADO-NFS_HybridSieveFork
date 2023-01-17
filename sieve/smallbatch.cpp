@@ -256,7 +256,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
 		//-gmp_fprintf(stderr, "[POST BATCH] norm[%d] = %Zd\n", j, surv[j].norm[side]);
 		//-gmp_fprintf(stderr, "[POST BATCH] sm_s[%d] = %Zd\n", j, surv[j].sm_smoothpart[side]);
-		//fprintf(stderr, "-------------------\n");
+		//-fprintf(stderr, "-------------------\n");
 
 
                 //version alternative: (les perf ont l'air rigoureusement équivalentes...)

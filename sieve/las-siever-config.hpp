@@ -153,7 +153,7 @@ struct siever_config {
                 ok = ok && sc.sides[side].lambda == o.sides[side].lambda;
                 ok = ok && sc.sides[side].lpb == o.sides[side].lpb;
                 ok = ok && sc.sides[side].mfb == o.sides[side].mfb;
-                ok = ok && sc.sides[side].mfbb == o.sides[side].mfbb;
+                ok = ok && sc.sides[side].mfb_pre_ecm == o.sides[side].mfb_pre_ecm;
                 ok = ok && sc.sides[side].sbmp == o.sides[side].sbmp;
                 ok = ok && sc.sides[side].ncurves == o.sides[side].ncurves;
             }

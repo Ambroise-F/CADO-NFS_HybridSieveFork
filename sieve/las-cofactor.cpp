@@ -130,8 +130,8 @@ check_leftover_norm_legacy (cxx_mpz const & n, siever_side_config const & scs)
   unsigned int klpb;
   double nd, kB, B;
 
-  //-unsigned int mfbb  = scs.mfbb; //- unused ;)
-  //-printf("m=%u, s=%lu\n", mfbb, sbmp);
+  //-unsigned int mfb_pre_ecm  = scs.mfb_pre_ecm; //- unused ;)
+  //-printf("m=%u, s=%lu\n", mfb_pre_ecm, sbmp);
 
 
   ASSERT_ALWAYS(mpz_cmp_ui(n, 0) != 0);
@@ -210,11 +210,11 @@ check_leftover_norm_pre_batch (cxx_mpz const & n, siever_side_config const & scs
     //- doit remplacer cln
   size_t s = mpz_sizeinbase (n, 2);
   unsigned int mfb = scs.mfb;
-  unsigned int mfbb = scs.mfbb;
+  unsigned int mfb_pre_ecm = scs.mfb_pre_ecm;
   
   ASSERT_ALWAYS(mpz_cmp_ui(n, 0) != 0);
 
-  if (s > mfbb && s > mfb)
+  if (s > mfb_pre_ecm && s > mfb)
     return 0; /* n has more than mfb bits, which is the given limit */
   
   return 1;
@@ -228,19 +228,19 @@ check_leftover_norm_post_batch (cxx_mpz const & n, siever_side_config const & sc
   size_t s = mpz_sizeinbase (n, 2);
   unsigned int lpb   = scs.lpb;
   unsigned int mfb   = scs.mfb;
-  unsigned int mfbb  = scs.mfbb;
+  unsigned int mfb_pre_ecm  = scs.mfb_pre_ecm;
   //unsigned long sbmp = scs.sbmp;
   unsigned int klpb;
   double nd, kB, B;
 
   ASSERT_ALWAYS(mpz_cmp_ui(n, 0) != 0);
 
-  // assert(mfbb < 1000);
+  // assert(mfb_pre_ecm < 1000);
   // assert(sbmp == 200);
 
-  fprintf(stderr, "checking leftover norm : %lu bits (should be below m=%u bits)\n", s, mfbb);
+  //-fprintf(stderr, "checking leftover norm : %lu bits (should be below m=%u bits)\n", s, mfb_pre_ecm);
 
-  if (s > mfbb || s > mfb)
+  if (s > mfb_pre_ecm || s > mfb)
     return 0; /* n has more than mfb bits, which is the given limit */
 
   
