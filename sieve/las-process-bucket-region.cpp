@@ -700,6 +700,11 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 
 
                 pass = check_leftover_norm_pre_batch (cur.norm[side], scs); //-ws.conf.sides[side]);
+                if (cur.b == 18){
+                    fprintf(stderr, "\n\n---------------------\n(%ld, %lu), pass = %d\n---------------------\n\n", cur.a, cur.b, pass);
+                }
+
+
 
                 /*
 
@@ -790,6 +795,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 }
                 printf("\n");
             }
+
                 
 
 #if 0
@@ -811,10 +817,18 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
         }
 #endif
 
-        rep.survivors.enter_cofactoring++;
+        rep.survivors.enter_cofactoring++; // seg fault si commenté ici et mis à la place pile avant l'ECM, mais tel quel on incrémente plus qu'on n'envoie à ECM ?
 
         //- bypass
         surv_pre_batch.push_back(cur);
+/*
+        gmp_fprintf(stderr, "%li,%li:", cur.a, cur.b);
+        for (auto const& z : cur.factors[0]) gmp_fprintf(stderr, "%lx,", z);    
+        gmp_fprintf(stderr, ":");
+        for (auto const& z : cur.factors[1]) gmp_fprintf(stderr, "%lx,", z);
+        gmp_fprintf(stderr, "\n");
+
+*/        
 
         continue;
         assert(0);
@@ -899,6 +913,22 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
 
 
+
+#if 1
+        long unsigned min0 = 0xffffffff;
+        long unsigned min1 = 0xffffffff;
+
+        for (auto const& z : cur.factors[0]) 
+            min0 = min0 > z && z != 2 ? z : min0;
+        for (auto const& z : cur.factors[1]) 
+            min1 = min1 > z && z != 2 ? z : min1;
+
+        gmp_fprintf(stderr, "facteurs min du batch : %lx : %lx\n", min0, min1);
+        
+
+#endif
+
+
         /* 
          * it batches on first_side then gets rid of survivors with bigger leftover norms
          * it then batches a second time on fewer survivors on first_side^1
@@ -908,8 +938,8 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
          */
 
         int first_side = 1;
-
         
+        gmp_fprintf(stderr, "================ BATCHING (starting side %d) ================\n", first_side);
         for(int i = 0 ; i < 2; i++) {
             int side = first_side ^ i;
             auto conf_side = ws.conf.sides[side];
@@ -921,10 +951,15 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
             //-std::cout << "1st surv pre batch   = " << surv_pre_batch[0].norm[side] << "\n"; 
 
 
-            gmp_fprintf(stderr, "===============\nbatching  side %d, %ld survivors\n===============\n", side, surv_pre_batch.size());
+            gmp_fprintf(stderr, "* Batching %ld survivors on side %d\n", surv_pre_batch.size(), side);
 
             res = sm_batch(surv_pre_batch, fbp, side); //- primes ?
             assert(res != -1);      
+
+            for (auto &surv_tmp : surv_pre_batch)
+            if (surv_tmp.b == 18){
+                    gmp_fprintf(stderr, "\n\n---------------------\n(%ld, %lu), leftover norm = %Zd\n---------------------\n\n", surv_tmp.a, surv_tmp.b, surv_tmp.norm[side]);
+            }
 /*
             std::vector<int> filtered;
             //- for (auto &surv : surv_pre_batch)
@@ -944,7 +979,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 ), 
                 surv_pre_batch.end());
 
-            gmp_fprintf(stderr, "===============\nfiltering side %d, %ld survivors\n===============\n", side, surv_pre_batch.size());
+            gmp_fprintf(stderr, "  | filtering side %d, %ld survivors\n", side, surv_pre_batch.size());
 
 /*
             for (int j : filtered) {
@@ -954,11 +989,12 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
             if (surv_pre_batch.size() == 0)
                 break;
         }
+
+
         if (surv_pre_batch.size() > 0) {
             for(int side = 0 ; side < 2; side++) {
                 for (auto &surv : surv_pre_batch) {
                     nfs_work::side_data & wss(ws.sides[side]);
-
 
 #if 0  //- DEBUG
                     gmp_fprintf(stderr, "[BEFORE TRIALDIV], nb_fac = %lu\n", surv.factors[side].size());
@@ -979,6 +1015,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 #if 1
                     wss.td->trial_divide(surv.factors[side], surv.sm_smoothpart[side]);
                     // delete &surv.sm_smoothpart[side];
+                    std::sort (surv.factors[side].begin(), surv.factors[side].end()); //- important ?? dunno
 #endif
 
 #if 0 //- DEBUG
@@ -989,11 +1026,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                         mpz_init_set_ui (tmp_mpz, fac);
                         surv.lps[side].push_back(tmp_mpz);
                     }
-#endif
 
-                    std::sort (surv.factors[side].begin(), surv.factors[side].end()); //- important ?? ICI !
-                    
-#if 0 //- DEBUG
                     gmp_fprintf(stderr, "[AFTER  TRIALDIV], nb_fac = %lu\n", surv.factors[side].size());
                     gmp_fprintf(stderr, "[TEST *D0], side = %d, nb_fac = %lu, ptr = %p\n", side, surv.factors[side].size(), &surv);
                     
@@ -1013,16 +1046,6 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                     }
                     gmp_fprintf(stderr, "\n");
 #endif
-
-        /*            divide_known_primes (surv.factors[0], surv.norm[0], N, x,
-                                handle_2,
-                                &sides[0].primes,
-                                &sides[0].purged,
-                                *wss.td,
-                                surv.a, surv.b,
-                                *wss.fbs,
-                                no_trial_div);
-        */
 
                 }
             }
@@ -1044,6 +1067,12 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 #endif
 
 #if 1 // ECM
+                //-rep.survivors.enter_cofactoring++;
+
+                if (cur_last.b == 18){
+                    gmp_fprintf(stderr, "\n\n---------------------\n(%ld, %lu), leftover norms = %Zd, %Zd\n---------------------\n\n", cur_last.a, cur_last.b, cur_last.norm[0], cur_last.norm[1]);
+                }
+
                 if (ws.las.batch || ws.las.batch_print_survivors.filename)
                     fprintf(stderr, "[[ERROR]] ws.las.batch || ws.las.batch_print_survivors.filename\n");
                 if (dlp_descent)

@@ -198,7 +198,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 	/* compute product of primes */
 
         int Psize = mpz_sizeinbase(fb_product,2);
-        fprintf(stderr, "prime product has %zd bits (%ld limbs)\n", mpz_sizeinbase(fb_product, 2), mpz_size(fb_product));
+        fprintf(stderr, "  | prime product has %zd bits (%ld limbs)\n", mpz_sizeinbase(fb_product, 2), mpz_size(fb_product));
 
         double product_time = 0;
         double remainder_time = 0;
@@ -217,7 +217,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
         
 
         int n = surv.size();
-        fprintf(stderr, "size is %d\n", n);
+        fprintf(stderr, "  | size is %d\n", n);
         //int size = mpz_sizeinbase(toutes les normes)
         //                n += 1; // ?????
 
@@ -273,7 +273,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
         done += n;
         batches += 1;
 
-        fprintf(stderr, "-- batch_fac done\n");
+        fprintf(stderr, "  | batch_fac done\n");
 
         mpz_clear(smooth);
 
@@ -281,10 +281,10 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 	
 	double stop = wtime();
 
-	fprintf(stderr, "%d batches processed in %.2fs\n", batches, stop - start);
-        fprintf(stderr, "product time: %.2fs\n", product_time);
-        fprintf(stderr, "remainder time: %.2fs\n", remainder_time);
-        fprintf(stderr, "extra time: %.2fs\n", stop - start - product_time - remainder_time);
+	fprintf(stderr, "  | %d batches processed in %.2fs\n", batches, stop - start);
+        fprintf(stderr, "  | product time: %.2fs\n", product_time);
+        fprintf(stderr, "  | remainder time: %.2fs\n", remainder_time);
+        fprintf(stderr, "  | extra time: %.2fs\n", stop - start - product_time - remainder_time);
 
 
 	return 0;

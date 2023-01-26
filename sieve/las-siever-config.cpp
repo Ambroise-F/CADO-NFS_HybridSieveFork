@@ -184,8 +184,8 @@ fb_factorbase::key_type siever_config::instantiate_thresholds(int side) const
     fbprime_t fbb = sides[side].lim;
     fbprime_t bucket_thresh = this->bucket_thresh;
     fbprime_t bucket_thresh1 = this->bucket_thresh1;
-    //-fbprime_t small_batch_max_prime = sides[side].small_batch_max_prime; //- no idea what that does (yet again)
-    fbprime_t small_batch_max_prime = this->small_batch_max_prime; //- 
+    fbprime_t small_batch_max_prime = sides[side].sbmp; //- works for separate sbmp (sbmp0 and sbmp1)
+    //-fbprime_t small_batch_max_prime = this->small_batch_max_prime; //- doesn't work (works for -sbmp X)
     std::cout << "SBMP- = " << small_batch_max_prime << "\n";
     std::cout << "SBMP- = " << this->small_batch_max_prime << "\n";
     

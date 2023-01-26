@@ -795,17 +795,18 @@ struct helper_functor_dispatch_small_sieved_primes {
              */
             size_t k0 = local_thresholds[0][1+n];
             size_t k1 = local_thresholds[1][1+n];
-            printf("no trial_div fb.cpp = %d\n", K.no_trial_div);
-            printf("small_batch_max_prime fb.cpp = %d\n", K.k_small_batch_max_prime);
-            printf("skipped fb.cpp = %d\n", K.skipped);
+            fprintf(stderr, "fb.cpp : no trial_div = %d\n", K.no_trial_div);
+            fprintf(stderr, "fb.cpp : small_batch_max_prime = %d\n", K.k_small_batch_max_prime);
+            fprintf(stderr, "fb.cpp : skipped = %d\n", K.skipped);
+            fprintf(stderr, "fb.cpp : small_sieve primes : [%lu, %lu]\n", k0, k1);
             
             for(size_t k = k0 ; k < k1 ; ++k) {
                 FB_ENTRY_TYPE const & E(x[k]);
-                if (E.get_q() < K.skipped) { //- small_batch_max prime ?? MYTODO
+                if (E.get_q() < K.k_small_batch_max_prime || E.get_q() < K.skipped) { //- small_batch_max prime ?? MYTODO
                     if (E.k == 1)
                     {
                         S.small_sieve_entries.skipped.push_back(E.p);
-                        printf("p=%u; ", E.p); //-
+                        fprintf(stderr, "skp=%u; ", E.p); //-
                     }
                     continue;
                 }
