@@ -19,7 +19,7 @@
 #include "macros.h"
 
 #ifndef LARGE_PAGE_SIZE
-#define LARGE_PAGE_SIZE (2UL*1024*1024)
+#define LARGE_PAGE_SIZE (8*2UL*1024*1024)
 #endif
 
 const size_t small_size_cutoff = 4096;

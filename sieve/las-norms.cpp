@@ -328,7 +328,7 @@ lognorm_base::lognorm_base(siever_config const & sc, cxx_cado_poly const & cpoly
        experimentally close to optimal in terms of seconds per relation
        (+ 0.2 might be even better on the rational side) */
     if (lambda == 0.0)
-        lambda = 0.3 + (double) sc.sides[side].mfb /
+        lambda = 0.3 + (double) sc.sides[side].mfbb /   //- test mfb -> mfbb
             (double) sc.sides[side].lpb ;
 
     r = std::min(r, lambda * sc.sides[side].lpb);

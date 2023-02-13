@@ -140,6 +140,12 @@ void clear_product_tree3(mpz_t ** T)
         free(T);
 }
 
+/* pas besoin : pourquoi clear 12000 fois ?
+void partial_clear_product_tree(mpz_t ** T)
+{
+	int h = tree_height(MAX_N);
+}
+*/
 
 
 void array_setup(struct mpz_array *T)
@@ -202,6 +208,8 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
         double product_time = 0;
         double remainder_time = 0;
+        double loop_time = 0;
+        double clear_time = 0;
 
         
         mpz_t **T = sm_init_product_tree(MAX_N);
@@ -235,6 +243,8 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
         remainder_time += wtime() - remainder_start;
         product_time += remainder_start - product_start;
 
+        double loop_start = wtime();
+
 	for (int j = 0; j < n; j++) { // le résultat va dans smooth, smooth est réinjecté dans T -> ok cool mais il faut mettre les facteurs dans  (?)
 		/* Divide out R by gcd(fb_product, R) as much as we can. The first gcd may
 		 * have some cost, the subsequent ones are supposedly cheap
@@ -264,9 +274,12 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
                 //mpz_gcd(norms.A[done + j], T[0][j], norms.A[done + j]);
 	}
 	//clear_product_tree2(T, n, w);
+	double clear_start = wtime();
+
 	clear_product_tree3(T);
 
-
+	loop_time += clear_start - loop_start;
+	clear_time +=  wtime() - clear_start;
 
 	//clear_product_tree(T2, n, w);
 
@@ -284,7 +297,112 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 	fprintf(stderr, "  | %d batches processed in %.2fs\n", batches, stop - start);
         fprintf(stderr, "  | product time: %.2fs\n", product_time);
         fprintf(stderr, "  | remainder time: %.2fs\n", remainder_time);
-        fprintf(stderr, "  | extra time: %.2fs\n", stop - start - product_time - remainder_time);
+        fprintf(stderr, "  | loop time: %.2fs\n", loop_time);
+        fprintf(stderr, "  | clear time: %.2fs\n", clear_time);
+        fprintf(stderr, "  | extra time: %.2fs\n", stop - start - product_time - remainder_time - loop_time - clear_time);
+
+
+	return 0;
+}
+
+
+
+int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
+
+
+	// todo : change return (to actual facto)
+	// todo : make it so that facto tree is not computed _every fucking time_
+
+	/* compute product of primes */
+
+        int Psize = mpz_sizeinbase(fb_product,2);
+        //fprintf(stderr, "  | prime product has %zd bits (%ld limbs)\n", mpz_sizeinbase(fb_product, 2), mpz_size(fb_product));
+
+        double product_time = 0;
+        double remainder_time = 0;
+        double loop_time = 0;
+
+        
+
+        //mpz_t **T2= sm_init_product_tree(MAX_N);
+
+	double start = wtime();
+
+        int done = 0;     // norms up to done have been processed
+        int batches = 0;  // number of batches processed
+        mpz_t smooth;   // smooth part of norm        
+        mpz_init(smooth);
+        size_t w[MAX_DEPTH];
+        
+
+        int n = surv.size();
+        //fprintf(stderr, "  | size is %d\n", n);
+        //int size = mpz_sizeinbase(toutes les normes)
+        //                n += 1; // ?????
+
+        assert(n < MAX_N); //- n ???? todoo
+        assert(n > 0);
+
+        double product_start = wtime();
+
+	int h = sm_product_tree(T, surv, n, w, side); // result is T // don't open seg fault inside
+
+	double remainder_start = wtime();
+	// remainder_tree(T, w, fb_product, norms.A + done, n);
+        remainder_tree_simple(T, w, fb_product, h, side); // result is also T
+
+        remainder_time += wtime() - remainder_start;
+        product_time += remainder_start - product_start;
+
+        double loop_start = wtime();
+
+	for (int j = 0; j < n; j++) { // le résultat va dans smooth, smooth est réinjecté dans T -> ok cool mais il faut mettre les facteurs dans  (?)
+		/* Divide out R by gcd(fb_product, R) as much as we can. The first gcd may
+		 * have some cost, the subsequent ones are supposedly cheap
+		 * enough */
+	        mpz_set_ui(smooth, 1);
+	        //-gmp_fprintf(stderr, "[PRE  BATCH] norm[%d] = %Zd           (side = %d)\n", j, surv[j].norm[side].x, side);
+        	for (;;) {
+        		//if (mpz_cmp_ui(T[0][j], 1) == 0)
+			//	break;
+			mpz_gcd(T[0][j], T[0][j], surv[j].norm[side]);
+			if (mpz_cmp_ui(T[0][j], 1) == 0)
+				break;
+			mpz_divexact(surv[j].norm[side], surv[j].norm[side], T[0][j]);
+                        mpz_mul(smooth, smooth, T[0][j]);
+		}
+                // mpz_swap(surv[j].norm[side], smooth); //- no swap, remainder/non-smooth part should be in surv[j].norm[side], instead, smooth part should go in surv[j].factors or smthg?
+		
+		mpz_init_set(surv[j].sm_smoothpart[side], smooth);
+
+		//-gmp_fprintf(stderr, "[POST BATCH] norm[%d] = %Zd\n", j, surv[j].norm[side]);
+		//-gmp_fprintf(stderr, "[POST BATCH] sm_s[%d] = %Zd\n", j, surv[j].sm_smoothpart[side]);
+		//-fprintf(stderr, "-------------------\n");
+
+
+                //version alternative: (les perf ont l'air rigoureusement équivalentes...)
+                //mpz_powm_ui(T[0][j], T[0][j], 17, norms.A[done + j]);
+                //mpz_gcd(norms.A[done + j], T[0][j], norms.A[done + j]);
+	}
+
+	loop_time += wtime() - loop_start;
+
+        done += n;
+        batches += 1;
+
+        //fprintf(stderr, "  | batch_fac done\n");
+
+        mpz_clear(smooth);
+
+        //delete &fb_product; //no
+	
+	double stop = wtime();
+
+	//fprintf(stderr, "  | %d batches processed in %.2fs\n", batches, stop - start);
+        //fprintf(stderr, "  | product time: %.2fs\n", product_time);
+        //fprintf(stderr, "  | remainder time: %.2fs\n", remainder_time);
+        //fprintf(stderr, "  | loop time: %.2fs\n", loop_time);
+        //fprintf(stderr, "  | extra time: %.2fs\n", stop - start - product_time - remainder_time - loop_time);
 
 
 	return 0;

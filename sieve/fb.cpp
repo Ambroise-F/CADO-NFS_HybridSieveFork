@@ -43,7 +43,7 @@
 #include "u64arith.h"       // for u64arith_invmod
 #include "verbose.h"             // verbose_output_print
 #include "las-side-config.hpp"
-
+#include "smallbatch.hpp"
 
 #include <iostream>
 
@@ -795,18 +795,20 @@ struct helper_functor_dispatch_small_sieved_primes {
              */
             size_t k0 = local_thresholds[0][1+n];
             size_t k1 = local_thresholds[1][1+n];
+
+#if 0
             fprintf(stderr, "fb.cpp : no trial_div = %d\n", K.no_trial_div);
             fprintf(stderr, "fb.cpp : small_batch_max_prime = %d\n", K.k_small_batch_max_prime);
             fprintf(stderr, "fb.cpp : skipped = %d\n", K.skipped);
             fprintf(stderr, "fb.cpp : small_sieve primes : [%lu, %lu]\n", k0, k1);
-            
+#endif            
             for(size_t k = k0 ; k < k1 ; ++k) {
                 FB_ENTRY_TYPE const & E(x[k]);
                 if (E.get_q() < K.k_small_batch_max_prime || E.get_q() < K.skipped) { //- small_batch_max prime ?? MYTODO
                     if (E.k == 1)
                     {
                         S.small_sieve_entries.skipped.push_back(E.p);
-                        fprintf(stderr, "skp=%u; ", E.p); //-
+                        //-fprintf(stderr, "skp=%u; ", E.p); //-
                     }
                     continue;
                 }
@@ -872,7 +874,7 @@ struct helper_functor_dispatch_small_sieved_primes {
                     S.small_sieve_entries.resieved.push_back(G);
                 }
             }
-            printf("\n"); //-
+            //- printf("\n"); //-
         }
 };
 
@@ -1146,7 +1148,9 @@ fb_factorbase::slicing::slicing(fb_factorbase const & fb, fb_factorbase::key_typ
                 fb.side, os.str().c_str());
     }
 
-    this->slicing_fb_product = fb.fb_product;   
+    this->slicing_fb_product = fb.fb_product;
+    mpz_t ** tree = sm_init_product_tree(1024*256*60);
+    this->slicing_tree = tree;
     std::cout << "slicing_fb_product = " << this->slicing_fb_product << " - fb_product = " << fb.fb_product << "\n";
 
     /* This uses our cache of thresholds, we expect it to be quick enough */

@@ -47,3 +47,6 @@ mpz_t ** sm_init_product_tree(int);
 int sm_product_tree(mpz_t **, std::vector<cofac_standalone>, int , size_t *);
 
 int sm_batch(std::vector<cofac_standalone>&, cxx_mpz, int);
+int sm_batch_initalized_tree(mpz_t **, std::vector<cofac_standalone>&, cxx_mpz, int);
+
+

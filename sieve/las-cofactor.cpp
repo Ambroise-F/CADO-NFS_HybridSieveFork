@@ -209,12 +209,12 @@ check_leftover_norm_pre_batch (cxx_mpz const & n, siever_side_config const & scs
 {
     //- doit remplacer cln
   size_t s = mpz_sizeinbase (n, 2);
-  unsigned int mfb = scs.mfb;
+  //unsigned int mfb = scs.mfb;
   unsigned int mfbb = scs.mfbb;
   
   ASSERT_ALWAYS(mpz_cmp_ui(n, 0) != 0);
 
-  if (s > mfbb && s > mfb) //- mfbb should be larger than mfb
+  if (s > mfbb)//- && s > mfb) // mfbb should be larger than mfb
     return 0; /* n has more than mfb bits, which is the given limit */
   
   return 1;

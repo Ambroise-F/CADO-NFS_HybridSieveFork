@@ -687,6 +687,7 @@ class fb_factorbase {
          */
 
         cxx_mpz slicing_fb_product = 1;
+        mpz_t ** slicing_tree;
 
         template<typename T>
         void foreach_slice(T & f) {

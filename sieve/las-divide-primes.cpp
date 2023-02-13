@@ -67,6 +67,7 @@ static void
 divide_primes_from_bucket (factor_list_t & fl, mpz_t norm, const unsigned int N, const unsigned int x,
                            bucket_primes_t *BP, const int very_verbose)
 {
+
   while (!BP->is_end()) {
       const bucket_update_t<1, primehint_t> prime = BP->get_next_update();
       if (prime.x > x)
@@ -82,6 +83,9 @@ divide_primes_from_bucket (factor_list_t & fl, mpz_t norm, const unsigned int N,
                                      "# N = %u, x = %d, dividing out prime hint p = %lu, norm = %Zd\n",
                                      N, x, p, norm);
           }
+           //-debug-tmp-remove-pls
+          gmp_fprintf(stderr, "N = %u, x = %d, dividing out prime hint p = %lu, norm = %Zd\n", N, x, p, norm);
+          
           /* If powers of a prime p get bucket-sieved and more than one such
               power hits, then the second (and later) hints will find a
               cofactor that already had all powers of p divided out by the
@@ -126,6 +130,8 @@ divide_hints_from_bucket (factor_list_t &fl, mpz_t norm, const unsigned int N, c
           break;
         }
       if (complete_hint.x == x) {
+            //-gmp_fprintf(stderr, "N = %u, x = %d, dividing out fb_slice hint, index = %lu offset = %lu ", N, x, (unsigned long) complete_hint.index, (unsigned long) complete_hint.hint);
+          
           if (bucket_prime_stats) nr_bucket_longhints++;
           fb_slice_interface const & fb_slice = fbs[complete_hint.index];
           const unsigned long p = fb_slice.get_prime(complete_hint.hint);
@@ -190,6 +196,8 @@ divide_known_primes (std::vector<uint64_t> & fl, cxx_mpz & norm, const unsigned 
 
     // handle 2 separately, if it is in fb
     if (handle_2) {
+        
+
         int bit = mpz_scan1(norm, 0);
         for (int i = 0; i < bit; ++i)
             fl.push_back(2);
@@ -199,13 +207,35 @@ divide_known_primes (std::vector<uint64_t> & fl, cxx_mpz & norm, const unsigned 
     }
 
     // remove primes in "primes" that map to x
+    
     divide_primes_from_bucket (fl, norm, N, x, primes, trial_div_very_verbose);
     size_t nf_divide_primes = fl.size();
 
+#if 0 //- DEBUG
+
+    gmp_fprintf(stderr, "======== divide_primes_from_bucket ========\n");
+    for (auto f : primes){
+        gmp_fprintf(stderr, "%Zd;", f);
+    }
+    gmp_fprintf(stderr, "\n");
+
+#endif
+
     // now remove prime hints in "purged". If we had no factor base, then
     // we really should have an empty list here.
+
     divide_hints_from_bucket (fl, norm, N, x, purged, fbs, trial_div_very_verbose);
     size_t nf_divide_hints = fl.size();
+
+#if 0 //- DEBUG
+
+    gmp_fprintf(stderr, "======== divide_hints_from_bucket ========\n");
+    for (auto f : primes){
+        gmp_fprintf(stderr, "%Zd;", f);
+    }
+    gmp_fprintf(stderr, "\n");
+
+#endif
 
     if (trial_div_very_verbose)
         verbose_output_vfprint(TRACE_CHANNEL, 0, gmp_vfprintf, "# x = %d, after dividing out bucket/resieved norm = %Zd\n", x, (mpz_srcptr) norm);

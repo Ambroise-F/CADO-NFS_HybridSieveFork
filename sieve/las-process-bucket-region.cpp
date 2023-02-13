@@ -507,6 +507,7 @@ void process_bucket_region_run::resieve(int side)/*{{{*/
 void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*/
 {
     int nsides = sides.size();
+    int surv_pre_batch_bit_size[2] = {0, 0};
 
     /* by declaring this timer "fuzzy", we make the child timers use only
      * userspace calls, and not system calls. This makes it possible to
@@ -610,7 +611,6 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
         
         unsigned int sbmp0, sbmp1;
         */
-
         if (do_resieve) {
 
             for(int pside = 0 ; pass && pside < 2 ; pside++) {
@@ -670,6 +670,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 const bool handle_2 = true; /* FIXME */
                 rep.survivors.trial_divided_on_side[side]++;
 
+
                 divide_known_primes (cur.factors[side], cur.norm[side], N, x,
                         handle_2,
                         &sides[side].primes,
@@ -700,9 +701,9 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 
 
                 pass = check_leftover_norm_pre_batch (cur.norm[side], scs); //-ws.conf.sides[side]);
-                if (cur.b == 18){
+                /*if (cur.b == 18){
                     fprintf(stderr, "\n\n---------------------\n(%ld, %lu), pass = %d\n---------------------\n\n", cur.a, cur.b, pass);
-                }
+                }*/
 
 
 
@@ -821,6 +822,8 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
         //- bypass
         surv_pre_batch.push_back(cur);
+        surv_pre_batch_bit_size[0] += mpz_sizeinbase(cur.norm[0], 2);
+        surv_pre_batch_bit_size[1] += mpz_sizeinbase(cur.norm[1], 2);
 /*
         gmp_fprintf(stderr, "%li,%li:", cur.a, cur.b);
         for (auto const& z : cur.factors[0]) gmp_fprintf(stderr, "%lx,", z);    
@@ -914,7 +917,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
 
 
-#if 1
+#if 0
         long unsigned min0 = 0xffffffff;
         long unsigned min1 = 0xffffffff;
 
@@ -937,29 +940,33 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
          * side 1 might mean getting rid of more survivors
          */
 
-        int first_side = 1;
+        int first_side = 0;
         
-        gmp_fprintf(stderr, "================ BATCHING (starting side %d) ================\n", first_side);
+        //--gmp_fprintf(stderr, "================ BATCHING (starting side %d  :  %d bits) ================\n", first_side, surv_pre_batch_bit_size[first_side]);
         for(int i = 0 ; i < 2; i++) {
             int side = first_side ^ i;
             auto conf_side = ws.conf.sides[side];
             //nfs_work::side_data & wss(ws.sides[side]);
 
             cxx_mpz fbp = ws.sides[side].fbs->slicing_fb_product;
+            mpz_t **  tree = ws.sides[side].fbs->slicing_tree;
 
             //-gmp_fprintf(stderr, "1st surv pre batch   = %Zd\n", surv_pre_batch[0].norm[side]);
             //-std::cout << "1st surv pre batch   = " << surv_pre_batch[0].norm[side] << "\n"; 
 
 
-            gmp_fprintf(stderr, "* Batching %ld survivors on side %d\n", surv_pre_batch.size(), side);
+            //--gmp_fprintf(stderr, "* Batching %ld survivors on side %d\n", surv_pre_batch.size(), side);
 
-            res = sm_batch(surv_pre_batch, fbp, side); //- primes ?
+            //-res = sm_batch(surv_pre_batch, fbp, side); //- primes ?
+            res = sm_batch_initalized_tree(tree, surv_pre_batch, fbp, side);
             assert(res != -1);      
 
+            /*
             for (auto &surv_tmp : surv_pre_batch)
             if (surv_tmp.b == 18){
                     gmp_fprintf(stderr, "\n\n---------------------\n(%ld, %lu), leftover norm = %Zd\n---------------------\n\n", surv_tmp.a, surv_tmp.b, surv_tmp.norm[side]);
             }
+            */
 /*
             std::vector<int> filtered;
             //- for (auto &surv : surv_pre_batch)
@@ -979,7 +986,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 ), 
                 surv_pre_batch.end());
 
-            gmp_fprintf(stderr, "  | filtering side %d, %ld survivors\n", side, surv_pre_batch.size());
+            //--gmp_fprintf(stderr, "  | filtering side %d, %ld survivors\n", side, surv_pre_batch.size());
 
 /*
             for (int j : filtered) {
@@ -1069,9 +1076,9 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 #if 1 // ECM
                 //-rep.survivors.enter_cofactoring++;
 
-                if (cur_last.b == 18){
+                /*if (cur_last.b == 18){
                     gmp_fprintf(stderr, "\n\n---------------------\n(%ld, %lu), leftover norms = %Zd, %Zd\n---------------------\n\n", cur_last.a, cur_last.b, cur_last.norm[0], cur_last.norm[1]);
-                }
+                }*/
 
                 if (ws.las.batch || ws.las.batch_print_survivors.filename)
                     fprintf(stderr, "[[ERROR]] ws.las.batch || ws.las.batch_print_survivors.filename\n");
@@ -1192,13 +1199,13 @@ void process_bucket_region_run::operator()() {/*{{{*/
     /* These two steps used to be called "prepare_cofactoring" */
     for(int side = 0 ; !survivors.empty() && do_resieve && side < nsides ; side++) {
         MARK_TIMER_FOR_SIDE(timer, side);
-        sides[side].purged.allocate_memory(ws.local_memory, BUCKET_REGION);
+        sides[side].purged.allocate_memory(ws.local_memory, BUCKET_REGION); //- ICI ???
         purge_buckets(side);
         size_t ns = survivors.size();
         double maxnorm = ws.sides[side].lognorms.get_maxlog2();
         double logp_lb = log2(ws.sides[side].fbK.td_thresh);
         size_t nprimes_max = ns * maxnorm / logp_lb;
-        sides[side].primes.allocate_memory(ws.local_memory, nprimes_max);
+        sides[side].primes.allocate_memory(ws.local_memory, nprimes_max); //- OU ICI ???
         resieve(side);
     }
 
