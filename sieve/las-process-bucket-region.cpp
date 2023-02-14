@@ -958,7 +958,19 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
             //--gmp_fprintf(stderr, "* Batching %ld survivors on side %d\n", surv_pre_batch.size(), side);
 
             //-res = sm_batch(surv_pre_batch, fbp, side); //- primes ?
-            res = sm_batch_initalized_tree(tree, surv_pre_batch, fbp, side);
+
+
+            auto D = new sm_batch_initialized_tree_parameters(); //- ICI ?
+            
+            D->tree = tree;
+            D->surv_sieve = surv_pre_batch;
+            D->fb_product = fbp;
+            D->side = side;
+
+            worker->get_pool().add_task(sm_batch_initialized_tree_task, D, N, 1); //- N ? trouver meilleur id ? -> probablement nécessaire si on découpe, càd si on envoie plusieurs batchs par région (donc même id)
+
+
+            res = sm_batch_initialized_tree(tree, surv_pre_batch, fbp, side);
             assert(res != -1);      
 
             /*

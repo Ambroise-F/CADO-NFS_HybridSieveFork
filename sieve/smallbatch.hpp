@@ -1,3 +1,9 @@
+#ifndef SMALLBATCH_HPP_
+#define SMALLBATCH_HPP_
+
+
+
+
 #include <stdbool.h>
 #include <assert.h>
 
@@ -10,11 +16,15 @@
 //#include <time.h>
 #include <sys/time.h>
 
+#include <memory>                    // for shared_ptr
 #include "las-cofac-standalone.hpp"       // for cofac_standalone
+#include "threadpool.hpp"            // for task_parameters, task_result
 #include "cxx_mpz.hpp"
 
 
-
+//-class nfs_aux; ??
+class nfs_work_smallbatch;
+//-struct relation; ??
 
 #define MAX_DEPTH 32
 
@@ -47,6 +57,25 @@ mpz_t ** sm_init_product_tree(int);
 int sm_product_tree(mpz_t **, std::vector<cofac_standalone>, int , size_t *);
 
 int sm_batch(std::vector<cofac_standalone>&, cxx_mpz, int);
-int sm_batch_initalized_tree(mpz_t **, std::vector<cofac_standalone>&, cxx_mpz, int);
+int sm_batch_initialized_tree(mpz_t **, std::vector<cofac_standalone>&, cxx_mpz, int);
+
+
+/* test smallbatch tasks - copié de detached_cofac_parameters & cie dans las-detached-cofac._pp */
+
+struct sm_batch_initialized_tree_parameters : public task_parameters { //- add std::shared_ptr<> ?? (to everything but tree)
+    mpz_t ** tree;
+    std::vector<cofac_standalone> surv_sieve;
+    cxx_mpz fb_product;
+    int side;
+};
+
+struct sm_batch_initialized_tree_result : public task_result {
+    std::vector<cofac_standalone> surv_batch;
+};
+
+task_result * sm_batch_initialized_tree_task(worker_thread * worker, task_parameters * _param, int);
+
+#endif  /* SMALLBATCH_HPP_ */
+
 
 

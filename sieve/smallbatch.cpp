@@ -307,7 +307,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
 
 
-int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
+int sm_batch_initialized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
 
 	// todo : change return (to actual facto)
@@ -538,3 +538,51 @@ int main(int argc, char *argv[])
 	return 0;
 }
 #endif
+
+
+task_result * sm_batch_initialized_tree_task(worker_thread * worker, task_parameters * _param, int) /* {{{ */
+{
+    /*auto clean_param = call_dtor([_param]() { delete _param; });
+
+    /* We must exit by cleaning the param structure we've been given. But
+     * everything we do with the objects whose life is dependent on our
+     * param structure must of course be completed at this point. This
+     * holds as well for the timer. Yet ACTIVATE_TIMER below registers
+     * some stuff to be done at dtor time, so it's important that we
+     * clean up the parameters *after* the timer cleans up.
+     /
+    detached_cofac_parameters *param = static_cast<detached_cofac_parameters *>(_param);
+
+    /* Import some contextual stuff. /
+    int id = worker->rank();
+    nfs_aux & aux(*param->aux_p);
+    nfs_aux::thread_data & taux(aux.th[id]);
+    las_report & rep(taux.rep);
+    timetree_t & timer(aux.get_timer(worker));
+    /* The timer is normally not running, as we're in a thread task.
+     * However, in descent mode, this is called synchronously, and then
+     * the situation is different since the timer has already been
+     * activated above.
+     /
+    cofac_standalone & cur(*param);
+    //-gmp_fprintf(stderr, "[TEST *D4], nb_fac = %lu, ptr = %p\n", cur.factors[0].size(), &cur);
+            
+
+    detached_cofac_result * res;
+    if (dlp_descent) {
+        CHILD_TIMER(timer, __func__);
+        res = detached_cofac_inner(worker, param);
+    } else {
+        ENTER_THREAD_TIMER(timer);
+        res = detached_cofac_inner(worker, param);
+    }
+
+    /* Build histogram of lucky S[x] values. Not sure it still works... /
+    rep.mark_report(cur.S[0], cur.S[1]);
+
+    return (task_result*) res;*/
+	sm_batch_initialized_tree_parameters *param = static_cast<sm_batch_initialized_tree_parameters *>(_param);
+	sm_batch_initialized_tree_result * res;
+	res->surv_batch = param->surv_sieve;
+	return (task_result*) res;
+}
