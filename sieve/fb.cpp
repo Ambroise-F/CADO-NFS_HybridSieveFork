@@ -26,6 +26,11 @@
 #include <unistd.h>
 #endif
 #include <gmp.h>           // for mpz_t, mpz_fdiv_ui, mpz_gcd_ui
+
+
+#include "smallbatch.hpp"
+#include <iostream>
+
 #include "fb.hpp"
 #include "getprime.h"               // for getprime_mt, prime_info_clear
 #ifndef NDEBUG
@@ -43,9 +48,7 @@
 #include "u64arith.h"       // for u64arith_invmod
 #include "verbose.h"             // verbose_output_print
 #include "las-side-config.hpp"
-#include "smallbatch.hpp"
 
-#include <iostream>
 
 
 struct qlattice_basis; // IWYU pragma: keep

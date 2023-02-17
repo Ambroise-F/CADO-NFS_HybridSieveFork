@@ -1,3 +1,7 @@
+#ifndef SMALLBATCH_HPP_
+#define SMALLBATCH_HPP_
+
+
 #include <stdbool.h>
 #include <assert.h>
 
@@ -13,7 +17,7 @@
 #include "las-cofac-standalone.hpp"       // for cofac_standalone
 #include "cxx_mpz.hpp"
 
-
+#define PRINTBATCH 1
 
 
 #define MAX_DEPTH 32
@@ -45,8 +49,14 @@ typedef sm_mpz_product_tree_t sm_mpz_product_tree[1];
 mpz_t ** sm_init_product_tree(int);
 
 int sm_product_tree(mpz_t **, std::vector<cofac_standalone>, int , size_t *);
+int sm_product_tree_subvector(mpz_t **, std::vector<cofac_standalone>, int , int, size_t *);
 
 int sm_batch(std::vector<cofac_standalone>&, cxx_mpz, int);
-int sm_batch_initalized_tree(mpz_t **, std::vector<cofac_standalone>&, cxx_mpz, int);
 
 
+//int sm_batch_initalized_tree(mpz_t **, std::vector<cofac_standalone>&, cxx_mpz, int);
+int sm_batch_initalized_tree(mpz_t ** , std::vector<cofac_standalone> &, cxx_mpz , int , int , int , int);
+
+int sm_batch_initalized_tree_split(mpz_t **, std::vector<cofac_standalone> &, cxx_mpz, int);
+
+#endif // SMALLBATCH_HPP_

@@ -940,11 +940,16 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
          * side 1 might mean getting rid of more survivors
          */
 
-        int first_side = 0;
-        
-        //--gmp_fprintf(stderr, "================ BATCHING (starting side %d  :  %d bits) ================\n", first_side, surv_pre_batch_bit_size[first_side]);
+        int first_side = 1;
+
+#if PRINTBATCH
+        gmp_fprintf(stderr, "================ BATCHING (starting side %d  :  %d bits) ================\n", first_side, surv_pre_batch_bit_size[first_side]);
+#endif
         for(int i = 0 ; i < 2; i++) {
+
             int side = first_side ^ i;
+
+
             auto conf_side = ws.conf.sides[side];
             //nfs_work::side_data & wss(ws.sides[side]);
 
@@ -954,11 +959,11 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
             //-gmp_fprintf(stderr, "1st surv pre batch   = %Zd\n", surv_pre_batch[0].norm[side]);
             //-std::cout << "1st surv pre batch   = " << surv_pre_batch[0].norm[side] << "\n"; 
 
-
-            //--gmp_fprintf(stderr, "* Batching %ld survivors on side %d\n", surv_pre_batch.size(), side);
-
+#if PRINTBATCH
+            gmp_fprintf(stderr, "* Batching %ld survivors on side %d\n", surv_pre_batch.size(), side);
+#endif
             //-res = sm_batch(surv_pre_batch, fbp, side); //- primes ?
-            res = sm_batch_initalized_tree(tree, surv_pre_batch, fbp, side);
+            res = sm_batch_initalized_tree_split(tree, surv_pre_batch, fbp, side);
             assert(res != -1);      
 
             /*
@@ -985,9 +990,9 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                         return (!check_leftover_norm_post_batch(checked_surv.norm[side], conf_side));}
                 ), 
                 surv_pre_batch.end());
-
-            //--gmp_fprintf(stderr, "  | filtering side %d, %ld survivors\n", side, surv_pre_batch.size());
-
+#if PRINTBATCH
+            gmp_fprintf(stderr, "  | filtering side %d, %ld survivors\n", side, surv_pre_batch.size());
+#endif
 /*
             for (int j : filtered) {
                 surv[j].remove
