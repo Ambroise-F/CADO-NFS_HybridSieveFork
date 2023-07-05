@@ -401,6 +401,8 @@ process_bucket_region_run::survivors_t process_bucket_region_run::search_survivo
 
     rep.survivors.before_sieve += 1U << LOG_BUCKET_REGION;
 
+
+
     temp_sv.reserve(128);
 
     for (unsigned int j = j0; j < j1; j++)
@@ -610,15 +612,17 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
         //- auto truc = ws.sides[0].fbK.no_trial_div;
         
         unsigned int sbmp0, sbmp1;
+
         */
+
+        //-fprintf(stderr, "%lu survivors before sieve\n", rep.survivors.before_sieve);
+
         if (do_resieve) {
 
             for(int pside = 0 ; pass && pside < 2 ; pside++) {
+
                 int side = trialdiv_first_side ^ pside;
                 nfs_work::side_data & wss(ws.sides[side]);
-
-
-
 
 
 
@@ -723,7 +727,8 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                             " on side %d for (%" PRId64 ",%" PRIu64 "): %d\n",
                             side, cur.a, cur.b, pass);
                 }
-                rep.survivors.check_leftover_norm_on_side[side] += pass;
+                if (pass)
+                    rep.survivors.check_leftover_norm_on_side[side] ++;
             }
         } else {
             ASSERT_ALWAYS(ws.las.batch || ws.las.batch_print_survivors.filename);
@@ -818,7 +823,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
         }
 #endif
 
-        rep.survivors.enter_cofactoring++; // seg fault si commenté ici et mis à la place pile avant l'ECM, mais tel quel on incrémente plus qu'on n'envoie à ECM ?
+        
 
         //- bypass
         surv_pre_batch.push_back(cur);
@@ -908,7 +913,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
     }
 #endif
 #if 1
-    int res; //- todo
+
     //- cxx_mpz fbp0 = ws.sides[0].fbs->slicing_fb_product;
     //- cxx_mpz fbp1 = ws.sides[1].fbs->slicing_fb_product;
 
@@ -933,21 +938,22 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 
 
         /* 
-         * it batches on first_side then gets rid of survivors with bigger leftover norms
+         * it batches on batch_first_side then gets rid of survivors with bigger leftover norms
          * it then batches a second time on fewer survivors on first_side^1
          * not clear which side it is better to start with :
          * side 0 means batching with a smaller factor base
          * side 1 might mean getting rid of more survivors
          */
 
-        int first_side = 1;
 
 #if PRINTBATCH
-        gmp_fprintf(stderr, "================ BATCHING (starting side %d  :  %d bits) ================\n", first_side, surv_pre_batch_bit_size[first_side]);
+        gmp_fprintf(stderr, "================ BATCHING (starting side %d  :  %d bits) ================\n", batch_first_side, surv_pre_batch_bit_size[batch_first_side]);
 #endif
+
+
         for(int i = 0 ; i < 2; i++) {
 
-            int side = first_side ^ i;
+            int side = batch_first_side ^ i;
 
 
             auto conf_side = ws.conf.sides[side];
@@ -963,8 +969,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
             gmp_fprintf(stderr, "* Batching %ld survivors on side %d\n", surv_pre_batch.size(), side);
 #endif
             //-res = sm_batch(surv_pre_batch, fbp, side); //- primes ?
-            res = sm_batch_initalized_tree_split(tree, surv_pre_batch, fbp, side);
-            assert(res != -1);      
+            sm_batch_initalized_tree_split(tree, surv_pre_batch, fbp, side);    
 
             /*
             for (auto &surv_tmp : surv_pre_batch)
@@ -981,7 +986,10 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                 if (!pass)
                     filtered.push_back(j)
             }
-*/
+*/          
+#if PRINTBATCH
+            long int size_before = surv_pre_batch.size();
+#endif
             surv_pre_batch.erase(
                 remove_if(
                     surv_pre_batch.begin(),
@@ -990,8 +998,13 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
                         return (!check_leftover_norm_post_batch(checked_surv.norm[side], conf_side));}
                 ), 
                 surv_pre_batch.end());
+
+            long int size_after = surv_pre_batch.size();
+            rep.survivors.after_batch[side]+= size_after;
+
 #if PRINTBATCH
-            gmp_fprintf(stderr, "  | filtering side %d, %ld survivors\n", side, surv_pre_batch.size());
+            gmp_fprintf(stderr, "  | filtering side %d, %ld survivors out of %ld (%.3f%)\n", side, size_after, size_before, 100 * (float) size_after/ (float) size_before);
+            gmp_fprintf(stderr, "  | total survivors after_batch so far for side %d : %ld\n", side, rep.survivors.after_batch[side]);
 #endif
 /*
             for (int j : filtered) {
@@ -1079,7 +1092,7 @@ void process_bucket_region_run::cofactoring_sync (survivors_t & survivors)/*{{{*
 #endif
 
 #if 1 // ECM
-                //-rep.survivors.enter_cofactoring++;
+                rep.survivors.enter_cofactoring++;
 
                 /*if (cur_last.b == 18){
                     gmp_fprintf(stderr, "\n\n---------------------\n(%ld, %lu), leftover norms = %Zd, %Zd\n---------------------\n\n", cur_last.a, cur_last.b, cur_last.norm[0], cur_last.norm[1]);
@@ -1225,6 +1238,19 @@ void process_bucket_region_run::operator()() {/*{{{*/
 #endif
 
     cofactoring_sync(survivors);
+
+#if PRINTBATCH
+    gmp_fprintf(stderr, "%ld surv before_sieve, %ld surv after_sieve, %ld surv after_batch[%d], %ld surv after_batch[%d]\n", 
+        rep.survivors.before_sieve, 
+        rep.survivors.after_sieve, 
+        rep.survivors.after_batch[batch_first_side], 
+        batch_first_side, 
+        rep.survivors.after_batch[1^batch_first_side], 
+        1^batch_first_side
+        );
+#endif
+    
+
 }/*}}}*/
 
 

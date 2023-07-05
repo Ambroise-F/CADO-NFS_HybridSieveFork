@@ -1215,6 +1215,8 @@ sieve/logapprox.hpp
 sieve/makefb.c
 sieve/makefb.sage
 sieve/plattice.sage
+sieve/smallbatch.cpp
+sieve/smallbatch.hpp
 sieve/strategies/CMakeLists.txt
 sieve/strategies/Makefile
 sieve/strategies/README

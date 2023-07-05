@@ -26,11 +26,6 @@
 #include <unistd.h>
 #endif
 #include <gmp.h>           // for mpz_t, mpz_fdiv_ui, mpz_gcd_ui
-
-
-#include "smallbatch.hpp"
-#include <iostream>
-
 #include "fb.hpp"
 #include "getprime.h"               // for getprime_mt, prime_info_clear
 #ifndef NDEBUG
@@ -48,7 +43,9 @@
 #include "u64arith.h"       // for u64arith_invmod
 #include "verbose.h"             // verbose_output_print
 #include "las-side-config.hpp"
+#include "smallbatch.hpp"
 
+#include <iostream>
 
 
 struct qlattice_basis; // IWYU pragma: keep
@@ -1154,7 +1151,7 @@ fb_factorbase::slicing::slicing(fb_factorbase const & fb, fb_factorbase::key_typ
     this->slicing_fb_product = fb.fb_product;
     mpz_t ** tree = sm_init_product_tree(1024*256*60);
     this->slicing_tree = tree;
-    std::cout << "slicing_fb_product = " << this->slicing_fb_product << " - fb_product = " << fb.fb_product << "\n";
+    //std::cout << "slicing_fb_product = " << this->slicing_fb_product << " - fb_product = " << fb.fb_product << "\n";
 
     /* This uses our cache of thresholds, we expect it to be quick enough */
     std::array<threshold_pos, FB_MAX_PARTS+1> local_thresholds;
@@ -1431,11 +1428,15 @@ static void store_task_result(fb_factorbase &fb, task_info_t const & T)
         fb_cur.invq = T.invq[j];
         pool.push_back(fb_cur);
 
-        if (fb_cur.k == 1 && fb_cur.p <= fb.small_batch_max_prime) {
+        if (fb_cur.k == 1 && fb_cur.p > 2 && fb_cur.p <= fb.small_batch_max_prime) {
             fb.fb_product *= fb_cur.p;
         }
     }
-    std::cout << "fbp in fb.cpp = " << fb.fb_product << "\n";//-
+
+    //size_t fbp_bits = mpz_sizeinbase(fb.fb_product, 2);
+    //gmp_fprintf(stderr, "size of fbp is %zd bits\n", fbp_bits);
+
+    //std::cout << "fbp in fb.cpp = " << fb.fb_product << "\n";//-
 
     ASSERT(std::is_sorted(pool.begin(), pool.end(), fb_entry_general::sort_byq()));
     fb.append(pool);
@@ -1486,7 +1487,7 @@ void fb_factorbase::make_linear_threadpool (unsigned int nb_threads)
         if (!get_new_task(*curr_T, next_prime, pi, maxp, next_pow, powers))
             break;
         curr_T->index = scheduled_tasks++;
-        pool.add_task(process_one_task, &params[curr_T-T], 0);
+        pool.add_task(process_one_task, &params[curr_T-T], 0);  
         active_task++;
     }
 
@@ -1673,9 +1674,15 @@ fb_factorbase::read(const char * const filename)
 
     append(pool);
 
+    size_t fbp_bits = mpz_sizeinbase(fb_product, 2);
+    //gmp_fprintf(stderr, "size of fbp (alg?) is %zd bits\n", fbp_bits);
+    fprintf(stderr, "# size of fbp (alg?) is %lu bits\n", fbp_bits);
+    
     verbose_output_print (0, 2, "# Factor base successfully read, %lu primes, "
             "largest was %" FBPRIME_FORMAT "\n",
             nr_primes, maxprime);
+    
+    //fprintf(stderr, "# size of fbp is %lu bits\n", fbp_bits);
     if (overflow) {
         verbose_output_print (0, 2, "# Note: %zu primes above limits (lim=%lu, powlim=%lu) were discarded\n", overflow, lim, powlim);
     }

@@ -83,8 +83,8 @@ divide_primes_from_bucket (factor_list_t & fl, mpz_t norm, const unsigned int N,
                                      "# N = %u, x = %d, dividing out prime hint p = %lu, norm = %Zd\n",
                                      N, x, p, norm);
           }
-           //-debug-tmp-remove-pls
-          gmp_fprintf(stderr, "N = %u, x = %d, dividing out prime hint p = %lu, norm = %Zd\n", N, x, p, norm);
+          //-debug-tmp-remove-pls
+          //-gmp_fprintf(stderr, "N = %u, x = %d, dividing out prime hint p = %lu, norm = %Zd\n", N, x, p, norm);
           
           /* If powers of a prime p get bucket-sieved and more than one such
               power hits, then the second (and later) hints will find a

@@ -18,6 +18,7 @@ struct las_report {
     struct survivors_t : public _padded_pod<survivors_t> {
         unsigned long before_sieve;
         unsigned long after_sieve;
+        unsigned long after_batch[2];
         unsigned long not_both_even;
         unsigned long not_both_multiples_of_p;
         unsigned long trial_divided_on_side[2];

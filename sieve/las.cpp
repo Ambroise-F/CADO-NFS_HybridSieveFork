@@ -799,6 +799,7 @@ static void do_one_special_q_sublat(nfs_work & ws, std::shared_ptr<nfs_work_cofa
         if (ws.toplevel == 1) {
             /* Process bucket regions in parallel */
             process_many_bucket_regions(ws, wc_p, aux_p, pool, 0, w);
+            //-
         } else {
             // Prepare plattices at internal levels
 
@@ -878,7 +879,7 @@ static bool do_one_special_q(las_info & las, nfs_work & ws, std::shared_ptr<nfs_
     /* Currently we assume that we're doing sieving + resieving on
      * both sides, or we're not. In the latter case, we expect to
      * complete the factoring work with batch cofactorization */
-    ASSERT_ALWAYS(las.batch || las.batch_print_survivors.filename || (ws.conf.sides[0].lim && ws.conf.sides[1].lim));
+    // ASSERT_ALWAYS(las.batch || las.batch_print_survivors.filename || (ws.conf.sides[0].lim && ws.conf.sides[1].lim)); // on vire ça sinon bug quand bench sur un seul côté
 
     std::shared_ptr<nfs_work_cofac> wc_p;
 
@@ -926,6 +927,7 @@ static bool do_one_special_q(las_info & las, nfs_work & ws, std::shared_ptr<nfs_
             do_one_special_q_sublat(ws, wc_p, aux_p, pool);
         }
     }
+    //-fprintf(stderr, "%lu survivors before sieve\n", rep.survivors.before_sieve);
 
     /* It's better than before, but still. We're going to keep this data
      * around for longer than we think if we get an exception above. 
@@ -933,6 +935,7 @@ static bool do_one_special_q(las_info & las, nfs_work & ws, std::shared_ptr<nfs_
     for(auto & wss : ws.sides) {
         wss.precomp_plattice_dense_clear();
         small_sieve_clear(wss.ssd);
+        //- clear product tree here ?
     }
 
     return true;

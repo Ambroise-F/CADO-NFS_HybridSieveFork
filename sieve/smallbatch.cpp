@@ -18,9 +18,9 @@
 
 
 
-static unsigned long tree_height(unsigned long n)
+static size_t tree_height(size_t n)
 {
-	unsigned long h = 0;
+	size_t h = 0;
 
 	while (n > 1) {
 		h++;
@@ -33,12 +33,12 @@ static unsigned long tree_height(unsigned long n)
 
 mpz_t ** sm_init_product_tree(int n)
 {
-        int h = tree_height(n);
+        size_t h = tree_height(n);
         mpz_t **T = (mpz_t **)malloc((h + 1) * sizeof(mpz_t *));
         
         /* initialize tree */
-        for (int i = 0; i <= h; i++) {
-                int w = 1 + ((n - 1) >> i);
+        for (size_t i = 0; i <= h; i++) {
+                size_t w = 1 + ((n - 1) >> i);
                 T[i] = (mpz_t *)malloc(w * sizeof(mpz_t));
                 for (size_t j = 0; j < w; j++)
                         mpz_init(T[i][j]);
@@ -52,11 +52,11 @@ mpz_t ** sm_init_product_tree(int n)
  *
  * returns the height
  */
-int sm_product_tree(mpz_t **T, std::vector<cofac_standalone> R, int n, size_t *w, int side)
+int sm_product_tree(mpz_t **T, std::vector<cofac_standalone> R, size_t n, size_t *w, int side)
 {
-	int h = tree_height(n);
+	size_t h = tree_height(n);
 	/* initialize tree */
-	for (int i = 0; i <= h; i++)
+	for (size_t i = 0; i <= h; i++)
 		w[i] = 1 + ((n - 1) >> i);
 
 
@@ -65,14 +65,14 @@ int sm_product_tree(mpz_t **T, std::vector<cofac_standalone> R, int n, size_t *w
         // CB: il y a moyen d'éviter ceci, en faisant directement pointer
         //     T[0] sur R...
 	//for (int j = 0; j < n; j++)
-	for (int j = 0; j < n; j++)
+	for (size_t j = 0; j < n; j++)
 		mpz_set(T[0][j], R[j].norm[side].x);
 	
 // gmp_fprintf(stderr, "norm[%d] = %Zd (n=%d)\n",j ,R[j].norm[side].x, n);
 
 	/* compute product tree */
-	for (int i = 1; i <= h; i++) {
-		for (int j = 0; j < w[i - 1] / 2; j++)
+	for (size_t i = 1; i <= h; i++) {
+		for (size_t j = 0; j < w[i - 1] / 2; j++)
 			mpz_mul(T[i][j], T[i - 1][2 * j], T[i - 1][2 * j + 1]);
 		if (w[i - 1] & 1)
 			mpz_set(T[i][w[i] - 1], T[i - 1][w[i - 1] - 1]);
@@ -82,9 +82,9 @@ int sm_product_tree(mpz_t **T, std::vector<cofac_standalone> R, int n, size_t *w
 
 int sm_product_tree_subvector(mpz_t **T, std::vector<cofac_standalone> R, int istart, int n, size_t *w, int side)
 {
-	int h = tree_height(n);
+	size_t h = tree_height(n);
 	/* initialize tree */
-	for (int i = 0; i <= h; i++)
+	for (size_t i = 0; i <= h; i++)
 		w[i] = 1 + ((n - 1) >> i);
 
 
@@ -99,8 +99,8 @@ int sm_product_tree_subvector(mpz_t **T, std::vector<cofac_standalone> R, int is
 // gmp_fprintf(stderr, "norm[%d] = %Zd (n=%d)\n",j ,R[j].norm[side].x, n);
 
 	/* compute product tree */
-	for (int i = 1; i <= h; i++) {
-		for (int j = 0; j < w[i - 1] / 2; j++)
+	for (size_t i = 1; i <= h; i++) {
+		for (size_t j = 0; j < w[i - 1] / 2; j++)
 			mpz_mul(T[i][j], T[i - 1][2 * j], T[i - 1][2 * j + 1]);
 		if (w[i - 1] & 1)
 			mpz_set(T[i][w[i] - 1], T[i - 1][w[i - 1] - 1]);
@@ -114,11 +114,11 @@ int sm_product_tree_subvector(mpz_t **T, std::vector<cofac_standalone> R, int is
  *
  * In the end, the new value of T[0][i] is P % T[0][i]. 
  */
-void remainder_tree_simple(mpz_t ** T, size_t *w, mpz_t P, int h, int side)
+void remainder_tree_simple(mpz_t ** T, size_t *w, mpz_t P, int h)
 {
         mpz_mod(T[h][0], P, T[h][0]);   // à priori, c'est cette opération la plus "dure"
         for (int i = h - 1; i >= 0; i--)
-                for (int j = 0; j < w[i]; j++)
+                for (size_t j = 0; j < w[i]; j++)
                         mpz_mod(T[i][j], T[i + 1][j / 2], T[i][j]);
         
 }
@@ -131,7 +131,7 @@ void remainder_tree_simple(mpz_t ** T, size_t *w, mpz_t P, int h, int side)
 /* Clear the product tree. */
 void clear_product_tree(mpz_t ** T, unsigned long n, size_t *w)
 {
-	unsigned long i, j, h = tree_height(n);
+	size_t i, j, h = tree_height(n);
 
 	for (i = 0; i <= h; i++) {
 		for (j = 0; j < w[i]; j++)
@@ -142,11 +142,11 @@ void clear_product_tree(mpz_t ** T, unsigned long n, size_t *w)
 }
 
 
-void clear_product_tree2(mpz_t ** T, unsigned long n, size_t *w)
+void clear_product_tree2(mpz_t ** T, unsigned long n)
 {
-	int h = tree_height(MAX_N);
-	for (int i = 0; i <= h; i++) {
-                int w = 1 + ((n - 1) >> i);
+	size_t h = tree_height(MAX_N);
+	for (size_t i = 0; i <= h; i++) {
+                size_t w = 1 + ((n - 1) >> i);
                 
                 for (size_t j = 0; j < w; j++)
                         mpz_clear(T[i][j]);
@@ -157,9 +157,9 @@ void clear_product_tree2(mpz_t ** T, unsigned long n, size_t *w)
 
 void clear_product_tree3(mpz_t ** T)
 {
-	int h = tree_height(MAX_N);
-	for (int i = 0; i <= h; i++) {
-                int w = 1 + ((MAX_N - 1) >> i);
+	size_t h = tree_height(MAX_N);
+	for (size_t i = 0; i <= h; i++) {
+                size_t w = 1 + ((MAX_N - 1) >> i);
 
                 for (size_t j = 0; j < w; j++)
                         mpz_clear(T[i][j]);
@@ -171,7 +171,7 @@ void clear_product_tree3(mpz_t ** T)
 /* pas besoin : pourquoi clear 12000 fois ?
 void partial_clear_product_tree(mpz_t ** T)
 {
-	int h = tree_height(MAX_N);
+	size_t h = tree_height(MAX_N);
 }
 */
 
@@ -231,8 +231,8 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
 	/* compute product of primes */
 
-        int Psize = mpz_sizeinbase(fb_product,2);
-        fprintf(stderr, "  | prime product has %zd bits (%ld limbs)\n", mpz_sizeinbase(fb_product, 2), mpz_size(fb_product));
+        // size_t Psize = mpz_sizeinbase(fb_product,2);
+        // debug/info/batch // fprintf(stderr, "  | prime product has %zd bits (%ld limbs)\n", mpz_sizeinbase(fb_product, 2), mpz_size(fb_product));
 
         double product_time = 0;
         double remainder_time = 0;
@@ -243,7 +243,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
         mpz_t **T = sm_init_product_tree(MAX_N);
         //mpz_t **T2= sm_init_product_tree(MAX_N);
 
-	double start = wtime();
+	//double start = wtime();
 
         int done = 0;     // norms up to done have been processed
         int batches = 0;  // number of batches processed
@@ -253,7 +253,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
         
 
         int n = surv.size();
-        fprintf(stderr, "  | size is %d\n", n);
+        // debug/info/batch // fprintf(stderr, "  | size is %d\n", n);
         //int size = mpz_sizeinbase(toutes les normes)
         //                n += 1; // ?????
 
@@ -266,7 +266,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
 	double remainder_start = wtime();
 	// remainder_tree(T, w, fb_product, norms.A + done, n);
-        remainder_tree_simple(T, w, fb_product, h, side); // result is also T
+        remainder_tree_simple(T, w, fb_product, h); // result is also T
 
         remainder_time += wtime() - remainder_start;
         product_time += remainder_start - product_start;
@@ -301,7 +301,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
                 //mpz_powm_ui(T[0][j], T[0][j], 17, norms.A[done + j]);
                 //mpz_gcd(norms.A[done + j], T[0][j], norms.A[done + j]);
 	}
-	//clear_product_tree2(T, n, w);
+	//clear_product_tree2(T, n);
 	double clear_start = wtime();
 
 	clear_product_tree3(T);
@@ -314,20 +314,20 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
         done += n;
         batches += 1;
 
-        fprintf(stderr, "  | batch_fac done\n");
+        // debug/info/batch // fprintf(stderr, "  | batch_fac done\n");
 
         mpz_clear(smooth);
 
         //delete &fb_product; //no
 	
-	double stop = wtime();
+	//double stop = wtime();
 
-	fprintf(stderr, "  | %d batches processed in %.2fs\n", batches, stop - start);
-        fprintf(stderr, "  | product time: %.2fs\n", product_time);
-        fprintf(stderr, "  | remainder time: %.2fs\n", remainder_time);
-        fprintf(stderr, "  | loop time: %.2fs\n", loop_time);
-        fprintf(stderr, "  | clear time: %.2fs\n", clear_time);
-        fprintf(stderr, "  | extra time: %.2fs\n", stop - start - product_time - remainder_time - loop_time - clear_time);
+	// debug/info/batch // fprintf(stderr, "  | %d batches processed in %.2fs\n", batches, stop - start);
+        // debug/info/batch // fprintf(stderr, "  | product time: %.2fs\n", product_time);
+        // debug/info/batch // fprintf(stderr, "  | remainder time: %.2fs\n", remainder_time);
+        // debug/info/batch // fprintf(stderr, "  | loop time: %.2fs\n", loop_time);
+        // debug/info/batch // fprintf(stderr, "  | clear time: %.2fs\n", clear_time);
+        // debug/info/batch // fprintf(stderr, "  | extra time: %.2fs\n", stop - start - product_time - remainder_time - loop_time - clear_time);
 
 
 	return 0;
@@ -335,7 +335,7 @@ int sm_batch(std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 
 
 
-int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side, int Psize, int istart, int nsurv){
+int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side, size_t Psize, size_t istart, size_t nsurv){
 
 
 	// todo : change return (to actual facto)
@@ -346,6 +346,8 @@ int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cx
         //int Psize = mpz_sizeinbase(fb_product,2);
         //fprintf(stderr, "  | prime product has %zd bits (%ld limbs)\n", mpz_sizeinbase(fb_product, 2), mpz_size(fb_product));
 
+	assert(Psize > 0);
+
         double product_time = 0;
         double remainder_time = 0;
         double loop_time = 0;
@@ -354,7 +356,7 @@ int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cx
 
         //mpz_t **T2= sm_init_product_tree(MAX_N);
 
-	double start = wtime();
+	//double start = wtime();
 
         int done = 0;     // norms up to done have been processed
         int batches = 0;  // number of batches processed
@@ -363,9 +365,9 @@ int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cx
         size_t w[MAX_DEPTH];
         
 
-        int n = nsurv;
-#if PRINTBATCH
-        fprintf(stderr, "  | size is %d\n", n);
+        size_t n = nsurv;
+#if PRINTBATCH & PRINTSUBBATCH
+        fprintf(stderr, "  | size is %zd\n", n);
 #endif
         //int size = mpz_sizeinbase(toutes les normes)
         //                n += 1; // ?????
@@ -382,14 +384,14 @@ int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cx
 
 	double remainder_start = wtime();
 	// remainder_tree(T, w, fb_product, norms.A + done, n);
-        remainder_tree_simple(T, w, fb_product, h, side); // result is also T
+        remainder_tree_simple(T, w, fb_product, h); // result is also T
 
         remainder_time += wtime() - remainder_start;
         product_time += remainder_start - product_start;
 
         double loop_start = wtime();
 
-	for (int j = 0; j < n; j++) { // le résultat va dans smooth, smooth est réinjecté dans T -> ok cool mais il faut mettre les facteurs dans  (?)
+	for (size_t j = 0; j < n; j++) { // le résultat va dans smooth, smooth est réinjecté dans T -> ok cool mais il faut mettre les facteurs dans  (?)
 		/* Divide out R by gcd(fb_product, R) as much as we can. The first gcd may
 		 * have some cost, the subsequent ones are supposedly cheap
 		 * enough */
@@ -428,9 +430,9 @@ int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cx
 
         //delete &fb_product; //no
 	
-	double stop = wtime();
+	//double stop = wtime();
 
-#if PRINTBATCH
+#if PRINTBATCH & PRINTSUBBATCH
 	fprintf(stderr, "  | %d batches processed in %.2fs\n", batches, stop - start);
         fprintf(stderr, "  | product time: %.2fs\n", product_time);
         fprintf(stderr, "  | remainder time: %.2fs\n", remainder_time);
@@ -442,24 +444,24 @@ int sm_batch_initalized_tree(mpz_t ** T, std::vector<cofac_standalone> &surv, cx
 }
 
 /* split surv into subarrays of optimal size for actual batch fac */
-int sm_batch_initalized_tree_split(mpz_t ** T, std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
+void sm_batch_initalized_tree_split(mpz_t ** T, std::vector<cofac_standalone> &surv, cxx_mpz fb_product, int side){
 	
-	int Psize = mpz_sizeinbase(fb_product,2);
-	int target_bitsize = Psize / 2;
+	size_t Psize = mpz_sizeinbase(fb_product,2);
+	size_t target_bitsize = Psize / 2;
 
 	//fprintf(stderr, "Psize = %d bits, target = %d bits\n", Psize, target_bitsize);
 
 
-	int istart = 0;
-	int split_n_surv = 0;
-	int split_bitsize = 0;
+	size_t istart = 0;
+	size_t split_n_surv = 0;
+	size_t split_bitsize = 0;
 
-	for (int i = 0; i < surv.size(); i++){
+	for (size_t i = 0; i < surv.size(); i++){
 		split_n_surv++;
 		split_bitsize += mpz_sizeinbase(surv[i].norm[side], 2);
 
 		if (split_bitsize > target_bitsize) {
-#if PRINTBATCH
+#if PRINTBATCH & PRINTSUBBATCH
 			fprintf(stderr, "[ full ] sub-batching %d surv of size %d bits (side %d)\n", split_n_surv, split_bitsize, side);
 #endif
 			sm_batch_initalized_tree(T, surv, fb_product, side, Psize, istart, split_n_surv);
@@ -469,7 +471,7 @@ int sm_batch_initalized_tree_split(mpz_t ** T, std::vector<cofac_standalone> &su
 		}
 	}
 	if (split_bitsize > 0) {
-#if PRINTBATCH
+#if PRINTBATCH & PRINTSUBBATCH
 		fprintf(stderr, "[remain] sub-batching %d surv of size %d bits (side %d)\n", split_n_surv, split_bitsize, side);
 #endif
 		sm_batch_initalized_tree(T, surv, fb_product, side, Psize, istart, split_n_surv);

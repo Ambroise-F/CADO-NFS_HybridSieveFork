@@ -331,7 +331,14 @@ lognorm_base::lognorm_base(siever_config const & sc, cxx_cado_poly const & cpoly
         lambda = 0.3 + (double) sc.sides[side].mfbb /   //- test mfb -> mfbb
             (double) sc.sides[side].lpb ;
 
+
+
     r = std::min(r, lambda * sc.sides[side].lpb);
+    r = sc.sides[side].mfbb - LOGNORM_GUARD_BITS / scale;
+    /*fprintf(stderr, "r = %f [%d]\n", r, side);
+    r = std::min(r, (double) sc.sides[side].mfbb);
+    fprintf(stderr, "r = %f [%d]\n", r, side);*/
+    
 
     /* other option is to ditch this +0.3 and define r (and hence the
      * bound) from mfb directly. Maybe a constant offse would be better

@@ -77,11 +77,12 @@ trialdiv_data const * sieve_shared_data::side_data::get_trialdiv_data(fb_factorb
     }
 
     //- 
-    printf("trialdiv_primes : ");
+    /*printf("trialdiv_primes : ");
     for(auto const & p : trialdiv_primes) {
         printf("%lu;", p);
     }
     printf("\n");
+    */
 
     if (!trialdiv_primes.empty()) {
         cxx_mpz zz(trialdiv_primes.back());

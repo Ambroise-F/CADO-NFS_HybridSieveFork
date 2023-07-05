@@ -20,6 +20,7 @@ extern int global_exit_semaphore;
 extern int allow_largesq;
 extern int sync_at_special_q;
 extern int trialdiv_first_side;
+extern int batch_first_side;
 extern double general_grace_time_ratio;
 extern double tt_qstart;
 extern las_output main_output;

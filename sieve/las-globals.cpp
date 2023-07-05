@@ -15,7 +15,8 @@ int global_exit_semaphore = 0;
 
 int allow_largesq = 0;
 int sync_at_special_q = 0;
-int trialdiv_first_side = 0;
+int trialdiv_first_side = 1;
+int batch_first_side = 0;
 
 double general_grace_time_ratio = DESCENT_DEFAULT_GRACE_TIME_RATIO;
 
